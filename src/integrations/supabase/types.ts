@@ -14,16 +14,604 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_requests: {
+        Row: {
+          id: string
+          rejection_reason: string | null
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["admin_request_status"]
+          user_id: string
+          workplace_id: string
+        }
+        Insert: {
+          id?: string
+          rejection_reason?: string | null
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["admin_request_status"]
+          user_id: string
+          workplace_id: string
+        }
+        Update: {
+          id?: string
+          rejection_reason?: string | null
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["admin_request_status"]
+          user_id?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_requests_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_pinned: boolean | null
+          title: string
+          updated_at: string
+          workplace_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          title: string
+          updated_at?: string
+          workplace_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          title?: string
+          updated_at?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+          workplace_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+          workplace_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklists: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          for_date: string | null
+          id: string
+          is_template: boolean | null
+          items: Json | null
+          title: string
+          updated_at: string
+          workplace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          for_date?: string | null
+          id?: string
+          is_template?: boolean | null
+          items?: Json | null
+          title: string
+          updated_at?: string
+          workplace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          for_date?: string | null
+          id?: string
+          is_template?: boolean | null
+          items?: Json | null
+          title?: string
+          updated_at?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklists_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_leads: {
+        Row: {
+          company: string
+          contact_person: string
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          phone: string | null
+          status: string | null
+          workplace_type: string | null
+        }
+        Insert: {
+          company: string
+          contact_person: string
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          status?: string | null
+          workplace_type?: string | null
+        }
+        Update: {
+          company?: string
+          contact_person?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          status?: string | null
+          workplace_type?: string | null
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_emergency: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          role: string | null
+          sort_order: number | null
+          workplace_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          sort_order?: number | null
+          workplace_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          sort_order?: number | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_prompts: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          prompt_text: string
+          sort_order: number | null
+          workplace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          prompt_text: string
+          sort_order?: number | null
+          workplace_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          prompt_text?: string
+          sort_order?: number | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_prompts_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      important_times: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          sort_order: number | null
+          time_value: string
+          workplace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          sort_order?: number | null
+          time_value: string
+          workplace_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          sort_order?: number | null
+          time_value?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "important_times_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["invite_code_status"]
+          updated_at: string
+          uses_count: number | null
+          workplace_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["invite_code_status"]
+          updated_at?: string
+          uses_count?: number | null
+          workplace_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["invite_code_status"]
+          updated_at?: string
+          uses_count?: number | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_codes_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          workplace_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+          workplace_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          workplace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routines: {
+        Row: {
+          category: string | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          sort_order: number | null
+          title: string
+          updated_at: string
+          workplace_id: string
+        }
+        Insert: {
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+          workplace_id: string
+        }
+        Update: {
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routines_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_time: string
+          id: string
+          is_approved: boolean | null
+          notes: string | null
+          role: string | null
+          shift_date: string
+          start_time: string
+          updated_at: string
+          user_id: string | null
+          user_name: string | null
+          workplace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_time: string
+          id?: string
+          is_approved?: boolean | null
+          notes?: string | null
+          role?: string | null
+          shift_date: string
+          start_time: string
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+          workplace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_time?: string
+          id?: string
+          is_approved?: boolean | null
+          notes?: string | null
+          role?: string | null
+          shift_date?: string
+          start_time?: string
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workplace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workplace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+          workplace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workplaces: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          industry: string | null
+          name: string
+          settings: Json | null
+          updated_at: string
+          workplace_code: string
+          workplace_type: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          industry?: string | null
+          name: string
+          settings?: Json | null
+          updated_at?: string
+          workplace_code: string
+          workplace_type?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          industry?: string | null
+          name?: string
+          settings?: Json | null
+          updated_at?: string
+          workplace_code?: string
+          workplace_type?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_workplace_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_workplace_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+          _workplace_id: string
+        }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_workplace_admin: {
+        Args: { _user_id: string; _workplace_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      admin_request_status: "pending" | "approved" | "rejected"
+      app_role: "super_admin" | "workplace_admin" | "employee"
+      invite_code_status: "active" | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +738,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      admin_request_status: ["pending", "approved", "rejected"],
+      app_role: ["super_admin", "workplace_admin", "employee"],
+      invite_code_status: ["active", "paused"],
+    },
   },
 } as const
