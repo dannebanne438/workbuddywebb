@@ -1,1 +1,7 @@
 project_id = "pzbyggsookweklrdkxtu"
+
+[functions.create-demo-users]
+verify_jwt = false
+
+[functions.workbuddy-chat]
+verify_jwt = false

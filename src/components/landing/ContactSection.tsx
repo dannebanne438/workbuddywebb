@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Send, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ContactSection = () => {
   const { toast } = useToast();
@@ -30,28 +31,45 @@ export const ContactSection = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast({
-      title: "Tack för ditt intresse!",
-      description: "Vi återkommer inom kort.",
-    });
-
-    // Reset form after showing success
-    setTimeout(() => {
-      setFormData({
-        company: "",
-        contactPerson: "",
-        email: "",
-        phone: "",
-        workplaceType: "",
-        message: "",
+    try {
+      const { error } = await supabase.from("contact_leads").insert({
+        company: formData.company,
+        contact_person: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone || null,
+        workplace_type: formData.workplaceType || null,
+        message: formData.message || null,
       });
-      setIsSubmitted(false);
-    }, 3000);
+
+      if (error) throw error;
+
+      setIsSubmitted(true);
+      toast({
+        title: "Tack för ditt intresse!",
+        description: "Vi återkommer inom kort.",
+      });
+
+      // Reset form after showing success
+      setTimeout(() => {
+        setFormData({
+          company: "",
+          contactPerson: "",
+          email: "",
+          phone: "",
+          workplaceType: "",
+          message: "",
+        });
+        setIsSubmitted(false);
+      }, 3000);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Något gick fel",
+        description: "Försök igen senare.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
