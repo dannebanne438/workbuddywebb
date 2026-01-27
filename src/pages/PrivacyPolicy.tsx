@@ -84,13 +84,14 @@ const PrivacyPolicy = () => {
               <h2 className="text-xl font-semibold mb-3">6. Kontakt</h2>
               <p className="text-muted-foreground leading-relaxed">
                 För frågor om denna integritetspolicy eller för att utöva dina
-                rättigheter, kontakta oss på{" "}
+                rättigheter, kontakta oss via vårt{" "}
                 <a
-                  href="mailto:privacy@workbuddy.se"
+                  href="/#contact"
                   className="text-primary hover:underline"
                 >
-                  privacy@workbuddy.se
+                  kontaktformulär
                 </a>
+                .
               </p>
             </section>
           </div>
