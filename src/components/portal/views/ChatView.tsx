@@ -3,7 +3,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWorkBuddyChat } from "@/hooks/useWorkBuddyChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Sparkles, Trash2, AlertCircle, Calendar, CheckCircle2 } from "lucide-react";
+import { 
+  Send, 
+  Sparkles, 
+  Trash2, 
+  AlertCircle, 
+  Calendar, 
+  CheckCircle2,
+  ClipboardList,
+  BookOpen,
+  Bell,
+  Trash,
+  Pencil
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { RequestAdminAccess } from "../RequestAdminAccess";
@@ -14,9 +26,24 @@ interface DemoPrompt {
   category: string | null;
 }
 
+const actionIcons: Record<string, { icon: typeof Calendar; label: string; color: string }> = {
+  create_schedule: { icon: Calendar, label: "Pass schemalagda", color: "text-accent" },
+  update_schedule: { icon: Pencil, label: "Pass uppdaterat", color: "text-blue-500" },
+  delete_schedule: { icon: Trash, label: "Pass borttaget", color: "text-destructive" },
+  create_checklist: { icon: ClipboardList, label: "Checklista skapad", color: "text-accent" },
+  update_checklist: { icon: Pencil, label: "Checklista uppdaterad", color: "text-blue-500" },
+  delete_checklist: { icon: Trash, label: "Checklista borttagen", color: "text-destructive" },
+  create_routine: { icon: BookOpen, label: "Rutin skapad", color: "text-accent" },
+  update_routine: { icon: Pencil, label: "Rutin uppdaterad", color: "text-blue-500" },
+  delete_routine: { icon: Trash, label: "Rutin borttagen", color: "text-destructive" },
+  create_announcement: { icon: Bell, label: "Nyhet publicerad", color: "text-accent" },
+  update_announcement: { icon: Pencil, label: "Nyhet uppdaterad", color: "text-blue-500" },
+  delete_announcement: { icon: Trash, label: "Nyhet borttagen", color: "text-destructive" },
+};
+
 export function ChatView() {
   const { session, workplace } = useAuth();
-  const { messages, isLoading, error, sendMessage, clearMessages, lastToolResult } = useWorkBuddyChat();
+  const { messages, isLoading, error, sendMessage, clearMessages, toolResults } = useWorkBuddyChat();
   const [input, setInput] = useState("");
   const [demoPrompts, setDemoPrompts] = useState<DemoPrompt[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,6 +74,10 @@ export function ChatView() {
 
   const handlePromptClick = (prompt: string) => {
     sendMessage(prompt, session);
+  };
+
+  const getActionDisplay = (action: string) => {
+    return actionIcons[action] || { icon: CheckCircle2, label: "Åtgärd utförd", color: "text-accent" };
   };
 
   return (
@@ -83,10 +114,10 @@ export function ChatView() {
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Hej! Jag är WorkBuddy</h2>
             <p className="text-muted-foreground max-w-md mb-8">
-              Fråga mig om rutiner, schema, kontakter eller be mig skapa checklistor och schemalägga personal.
+              Jag kan schemalägga, skapa checklistor, rutiner och nyheter. Bara säg till!
             </p>
 
-            {demoPrompts.length > 0 && (
+            {demoPrompts.length > 0 ? (
               <div className="w-full max-w-lg">
                 <p className="text-sm text-muted-foreground mb-3">Prova dessa:</p>
                 <div className="grid gap-2">
@@ -97,6 +128,26 @@ export function ChatView() {
                       className="text-left px-4 py-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-sm text-foreground"
                     >
                       {prompt.prompt_text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="w-full max-w-lg">
+                <p className="text-sm text-muted-foreground mb-3">Exempel på vad du kan säga:</p>
+                <div className="grid gap-2">
+                  {[
+                    "Schemalägg Anna imorgon 14-22",
+                    "Ta bort alla pass på fredag",
+                    "Skapa en öppningsrutin",
+                    "Publicera en nyhet om städdagen",
+                  ].map((prompt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handlePromptClick(prompt)}
+                      className="text-left px-4 py-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-sm text-foreground"
+                    >
+                      {prompt}
                     </button>
                   ))}
                 </div>
@@ -133,20 +184,37 @@ export function ChatView() {
               </div>
             ))}
             
-            {/* Tool result notification */}
-            {lastToolResult?.success && lastToolResult.action === "create_schedule" && (
+            {/* Tool result notifications */}
+            {toolResults.length > 0 && (
               <div className="flex justify-start">
-                <div className="bg-accent/10 border border-accent/30 rounded-2xl px-4 py-3 flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                    <Calendar className="h-4 w-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-accent" />
-                      {lastToolResult.created_shifts?.length || 0} pass schemalagda
-                    </p>
-                    <p className="text-xs text-muted-foreground">Visa i Schema-fliken</p>
-                  </div>
+                <div className="space-y-2">
+                  {toolResults.map((result, index) => {
+                    const display = getActionDisplay(result.action);
+                    const Icon = display.icon;
+                    return (
+                      <div 
+                        key={index}
+                        className="bg-accent/10 border border-accent/30 rounded-2xl px-4 py-3 flex items-center gap-3"
+                      >
+                        <div className={`h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center`}>
+                          <Icon className={`h-4 w-4 ${display.color}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-accent" />
+                            {display.label}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {result.shifts && `${result.shifts.length} pass`}
+                            {result.deleted_count !== undefined && result.deleted_count > 0 && `${result.deleted_count} borttagna`}
+                            {result.checklist && `"${result.checklist.title}"`}
+                            {result.routine && `"${result.routine.title}"`}
+                            {result.announcement && `"${result.announcement.title}"`}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -180,7 +248,7 @@ export function ChatView() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Skriv ett meddelande eller 'Schemalägg Anna imorgon 14-22'..."
+            placeholder="T.ex. 'Schemalägg Erik på måndag 08-16' eller 'Ta bort passet imorgon'"
             className="h-12"
             disabled={isLoading}
           />
