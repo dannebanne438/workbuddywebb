@@ -17,7 +17,7 @@ import {
   Home,
 } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail";
 
 interface PortalSidebarProps {
   currentView?: PortalView;

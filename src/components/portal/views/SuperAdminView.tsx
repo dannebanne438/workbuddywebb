@@ -38,7 +38,11 @@ interface Workplace {
   employee_count?: number;
 }
 
-export function SuperAdminView() {
+interface SuperAdminViewProps {
+  onSelectWorkplace?: (workplaceId: string) => void;
+}
+
+export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
   const { isSuperAdmin, user } = useAuth();
   const { toast } = useToast();
   const [requests, setRequests] = useState<AdminRequest[]>([]);
@@ -223,7 +227,8 @@ export function SuperAdminView() {
                 {workplaces.map((wp) => (
                   <div
                     key={wp.id}
-                    className="bg-card border border-border rounded-xl p-4"
+                    onClick={() => onSelectWorkplace?.(wp.id)}
+                    className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
