@@ -47,14 +47,37 @@ serve(async (req) => {
       .eq("id", userId)
       .single();
 
-    if (!profile?.workplace_id) {
+    let workplaceId = profile?.workplace_id;
+
+    // If no workplace assigned, check if super_admin and use first available workplace
+    if (!workplaceId) {
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "super_admin")
+        .maybeSingle();
+
+      if (roleData) {
+        // Super admin without workplace - get first available workplace for demo
+        const { data: firstWorkplace } = await supabase
+          .from("workplaces")
+          .select("id")
+          .limit(1)
+          .single();
+        
+        if (firstWorkplace) {
+          workplaceId = firstWorkplace.id;
+        }
+      }
+    }
+
+    if (!workplaceId) {
       return new Response(JSON.stringify({ error: "No workplace assigned" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const workplaceId = profile.workplace_id;
 
     // Get workplace data for context
     const { data: workplace } = await supabase
