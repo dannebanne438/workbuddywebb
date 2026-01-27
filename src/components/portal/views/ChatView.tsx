@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWorkBuddyChat } from "@/hooks/useWorkBuddyChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Sparkles, Trash2, AlertCircle } from "lucide-react";
+import { Send, Sparkles, Trash2, AlertCircle, Calendar, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { RequestAdminAccess } from "../RequestAdminAccess";
@@ -16,7 +16,7 @@ interface DemoPrompt {
 
 export function ChatView() {
   const { session, workplace } = useAuth();
-  const { messages, isLoading, error, sendMessage, clearMessages } = useWorkBuddyChat();
+  const { messages, isLoading, error, sendMessage, clearMessages, lastToolResult } = useWorkBuddyChat();
   const [input, setInput] = useState("");
   const [demoPrompts, setDemoPrompts] = useState<DemoPrompt[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ export function ChatView() {
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Hej! Jag är WorkBuddy</h2>
             <p className="text-muted-foreground max-w-md mb-8">
-              Fråga mig om rutiner, schema, kontakter eller be mig skapa checklistor och beräkna lön.
+              Fråga mig om rutiner, schema, kontakter eller be mig skapa checklistor och schemalägga personal.
             </p>
 
             {demoPrompts.length > 0 && (
@@ -132,7 +132,26 @@ export function ChatView() {
                 </div>
               </div>
             ))}
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            
+            {/* Tool result notification */}
+            {lastToolResult?.success && lastToolResult.action === "create_schedule" && (
+              <div className="flex justify-start">
+                <div className="bg-accent/10 border border-accent/30 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-accent" />
+                      {lastToolResult.created_shifts?.length || 0} pass schemalagda
+                    </p>
+                    <p className="text-xs text-muted-foreground">Visa i Schema-fliken</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-card border border-border rounded-2xl px-4 py-3">
                   <div className="flex gap-1">
@@ -161,7 +180,7 @@ export function ChatView() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Skriv ett meddelande..."
+            placeholder="Skriv ett meddelande eller 'Schemalägg Anna imorgon 14-22'..."
             className="h-12"
             disabled={isLoading}
           />
