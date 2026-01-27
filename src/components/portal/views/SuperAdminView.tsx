@@ -33,6 +33,9 @@ interface Workplace {
   name: string;
   company_name: string;
   workplace_code: string;
+  industry: string | null;
+  workplace_type: string | null;
+  employee_count?: number;
 }
 
 export function SuperAdminView() {
@@ -50,7 +53,7 @@ export function SuperAdminView() {
   }, [isSuperAdmin]);
 
   const fetchData = async () => {
-    const [requestsRes, leadsRes, workplacesRes] = await Promise.all([
+    const [requestsRes, leadsRes, workplacesRes, profilesRes] = await Promise.all([
       supabase
         .from("admin_requests")
         .select("*")
@@ -63,13 +66,33 @@ export function SuperAdminView() {
         .limit(20),
       supabase
         .from("workplaces")
-        .select("id, name, company_name, workplace_code")
+        .select("id, name, company_name, workplace_code, industry, workplace_type")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("workplace_id"),
     ]);
+
+    // Count employees per workplace
+    const employeeCounts: Record<string, number> = {};
+    if (profilesRes.data) {
+      profilesRes.data.forEach((p) => {
+        if (p.workplace_id) {
+          employeeCounts[p.workplace_id] = (employeeCounts[p.workplace_id] || 0) + 1;
+        }
+      });
+    }
 
     if (requestsRes.data) setRequests(requestsRes.data as AdminRequest[]);
     if (leadsRes.data) setLeads(leadsRes.data);
-    if (workplacesRes.data) setWorkplaces(workplacesRes.data);
+    if (workplacesRes.data) {
+      setWorkplaces(
+        workplacesRes.data.map((wp) => ({
+          ...wp,
+          employee_count: employeeCounts[wp.id] || 0,
+        }))
+      );
+    }
     setLoading(false);
   };
 
@@ -196,19 +219,33 @@ export function SuperAdminView() {
                 <Building className="h-5 w-5" />
                 Arbetsplatser ({workplaces.length})
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {workplaces.map((wp) => (
                   <div
                     key={wp.id}
-                    className="bg-card border border-border rounded-lg p-4 flex items-center justify-between"
+                    className="bg-card border border-border rounded-xl p-4"
                   >
-                    <div>
-                      <p className="font-medium text-foreground">{wp.name}</p>
-                      <p className="text-sm text-muted-foreground">{wp.company_name}</p>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-medium text-foreground">{wp.name}</p>
+                        <p className="text-sm text-muted-foreground">{wp.company_name}</p>
+                      </div>
+                      <span className="font-mono text-xs text-primary bg-primary/10 px-2 py-1 rounded">
+                        {wp.workplace_code}
+                      </span>
                     </div>
-                    <span className="font-mono text-xs text-primary bg-primary/10 px-2 py-1 rounded">
-                      {wp.workplace_code}
-                    </span>
+                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                      {wp.industry && (
+                        <span className="bg-secondary px-2 py-1 rounded">{wp.industry}</span>
+                      )}
+                      {wp.workplace_type && (
+                        <span className="bg-secondary px-2 py-1 rounded">{wp.workplace_type}</span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {wp.employee_count || 0} anställda
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
