@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChatView } from "./views/ChatView";
 import { ScheduleView } from "./views/ScheduleView";
 import { ChecklistsView } from "./views/ChecklistsView";
@@ -9,12 +9,31 @@ import { SettingsView } from "./views/SettingsView";
 import { SuperAdminView } from "./views/SuperAdminView";
 import { WorkplaceDetailView } from "./views/WorkplaceDetailView";
 import { PortalSidebar } from "./PortalSidebar";
+import { OnboardingModal } from "../onboarding/OnboardingModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail";
 
+const ONBOARDING_KEY = "workbuddy_onboarding_complete";
+
 export function PortalContent() {
+  const { profile } = useAuth();
   const [currentView, setCurrentView] = useState<PortalView>("chat");
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Check if user has completed onboarding
+    const onboardingComplete = localStorage.getItem(ONBOARDING_KEY);
+    if (!onboardingComplete) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem(ONBOARDING_KEY, "true");
+    setShowOnboarding(false);
+  };
 
   const handleSelectWorkplace = (workplaceId: string) => {
     setSelectedWorkplaceId(workplaceId);
@@ -59,11 +78,19 @@ export function PortalContent() {
   };
 
   return (
-    <div className="flex h-screen">
-      <PortalSidebar currentView={currentView} onViewChange={setCurrentView} />
-      <div className="flex-1 overflow-hidden">
-        {renderView()}
+    <>
+      <div className="flex h-screen">
+        <PortalSidebar currentView={currentView} onViewChange={setCurrentView} />
+        <div className="flex-1 overflow-hidden">
+          {renderView()}
+        </div>
       </div>
-    </div>
+      
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
+        userName={profile?.full_name || undefined}
+      />
+    </>
   );
 }
