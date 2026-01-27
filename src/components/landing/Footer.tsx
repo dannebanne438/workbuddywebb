@@ -23,7 +23,7 @@ export const Footer = () => {
           </div>
 
           {/* Links */}
-          <nav className="flex items-center gap-6 text-sm">
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
             <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">
               Logga in
             </Link>
@@ -33,6 +33,15 @@ export const Footer = () => {
             >
               Kontakta oss
             </button>
+            <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+              Integritetspolicy
+            </Link>
+            <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+              Användarvillkor
+            </Link>
+            <Link to="/gdpr" className="text-muted-foreground hover:text-foreground transition-colors">
+              GDPR
+            </Link>
           </nav>
 
           {/* Copyright */}
