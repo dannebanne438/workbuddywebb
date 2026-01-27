@@ -169,11 +169,6 @@ const Login = () => {
                   </>}
               </Button>
 
-              <div className="text-center pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground">
-              <code className="bg-muted px-1 rounded">NNS-SOLNA</code>
-                </p>
-              </div>
             </form> : <form onSubmit={handlePersonalSubmit} className="space-y-6 animate-fade-in">
               <div className="text-center space-y-2">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 mb-2">
@@ -221,11 +216,6 @@ const Login = () => {
                 </button>
               </div>
 
-              <div className="text-center pt-4 border-t border-border">
-                <p className="text-xs text-muted-foreground">
-                  Demo: <code className="bg-muted px-1 rounded">vakt1@nns.demo</code> / <code className="bg-muted px-1 rounded">Vakt123!</code>
-                </p>
-              </div>
             </form>}
         </div>
       </div>
