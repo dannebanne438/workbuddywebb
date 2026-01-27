@@ -6,17 +6,20 @@ type Message = {
 };
 
 interface ToolResult {
-  success: boolean;
-  action?: string;
-  created_shifts?: any[];
-  error?: string;
+  action: string;
+  shifts?: any[];
+  checklist?: any;
+  routine?: any;
+  announcement?: any;
+  deleted_count?: number;
+  shift?: any;
 }
 
 export function useWorkBuddyChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastToolResult, setLastToolResult] = useState<ToolResult | null>(null);
+  const [toolResults, setToolResults] = useState<ToolResult[]>([]);
 
   const sendMessage = useCallback(async (input: string, session: { access_token: string } | null) => {
     if (!session?.access_token) {
@@ -28,7 +31,7 @@ export function useWorkBuddyChat() {
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
     setError(null);
-    setLastToolResult(null);
+    setToolResults([]);
 
     try {
       const response = await fetch(
@@ -56,12 +59,11 @@ export function useWorkBuddyChat() {
 
       const data = await response.json();
       
-      // Handle non-streaming response with tool results
       if (data.response) {
         setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
         
-        if (data.tool_result) {
-          setLastToolResult(data.tool_result);
+        if (data.tool_results && Array.isArray(data.tool_results)) {
+          setToolResults(data.tool_results);
         }
       } else if (data.error) {
         throw new Error(data.error);
@@ -77,8 +79,8 @@ export function useWorkBuddyChat() {
   const clearMessages = useCallback(() => {
     setMessages([]);
     setError(null);
-    setLastToolResult(null);
+    setToolResults([]);
   }, []);
 
-  return { messages, isLoading, error, sendMessage, clearMessages, lastToolResult };
+  return { messages, isLoading, error, sendMessage, clearMessages, toolResults };
 }
