@@ -7,12 +7,24 @@ import { AnnouncementsView } from "./views/AnnouncementsView";
 import { EmployeesView } from "./views/EmployeesView";
 import { SettingsView } from "./views/SettingsView";
 import { SuperAdminView } from "./views/SuperAdminView";
+import { WorkplaceDetailView } from "./views/WorkplaceDetailView";
 import { PortalSidebar } from "./PortalSidebar";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail";
 
 export function PortalContent() {
   const [currentView, setCurrentView] = useState<PortalView>("chat");
+  const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
+
+  const handleSelectWorkplace = (workplaceId: string) => {
+    setSelectedWorkplaceId(workplaceId);
+    setCurrentView("workplace-detail");
+  };
+
+  const handleBackFromWorkplace = () => {
+    setSelectedWorkplaceId(null);
+    setCurrentView("admin");
+  };
 
   const renderView = () => {
     switch (currentView) {
@@ -31,7 +43,16 @@ export function PortalContent() {
       case "settings":
         return <SettingsView />;
       case "admin":
-        return <SuperAdminView />;
+        return <SuperAdminView onSelectWorkplace={handleSelectWorkplace} />;
+      case "workplace-detail":
+        return selectedWorkplaceId ? (
+          <WorkplaceDetailView 
+            workplaceId={selectedWorkplaceId} 
+            onBack={handleBackFromWorkplace} 
+          />
+        ) : (
+          <SuperAdminView onSelectWorkplace={handleSelectWorkplace} />
+        );
       default:
         return <ChatView />;
     }
