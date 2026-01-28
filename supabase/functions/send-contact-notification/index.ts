@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailHtml = `
       <h1>Ny kontaktförfrågan</h1>
-      <p>En ny intresseanmälan har inkommit via workbuddy.se</p>
+      <p>En ny intresseanmälan har inkommit via WorkBuddy-webbplatsen.</p>
       
       <h2>Kontaktuppgifter</h2>
       <table style="border-collapse: collapse; width: 100%; max-width: 500px;">
