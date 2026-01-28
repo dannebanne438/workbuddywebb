@@ -32,6 +32,7 @@ export const ContactSection = () => {
     setIsSubmitting(true);
 
     try {
+      // Save to database
       const { error } = await supabase.from("contact_leads").insert({
         company: formData.company,
         contact_person: formData.contactPerson,
@@ -42,6 +43,23 @@ export const ContactSection = () => {
       });
 
       if (error) throw error;
+
+      // Send email notification
+      const { error: emailError } = await supabase.functions.invoke("send-contact-notification", {
+        body: {
+          company: formData.company,
+          contactPerson: formData.contactPerson,
+          email: formData.email,
+          phone: formData.phone || null,
+          workplaceType: formData.workplaceType || null,
+          message: formData.message || null,
+        },
+      });
+
+      if (emailError) {
+        console.error("Email notification failed:", emailError);
+        // Don't fail the submission if email fails - data is already saved
+      }
 
       setIsSubmitted(true);
       toast({
