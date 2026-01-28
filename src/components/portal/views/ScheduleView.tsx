@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutGrid } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isToday } from "date-fns";
 import { sv } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Schedule {
   id: string;
@@ -19,31 +20,43 @@ interface Schedule {
   is_approved: boolean;
 }
 
+type ViewMode = "month" | "week";
+
 export function ScheduleView() {
   const { workplace } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
 
   useEffect(() => {
     if (workplace?.id) {
       fetchSchedules();
     }
-  }, [workplace?.id, currentMonth]);
+  }, [workplace?.id, currentMonth, currentWeek, viewMode]);
 
   const fetchSchedules = async () => {
     if (!workplace?.id) return;
     
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
+    let startDate: Date;
+    let endDate: Date;
     
-    const { data, error } = await supabase
+    if (viewMode === "month") {
+      startDate = startOfMonth(currentMonth);
+      endDate = endOfMonth(currentMonth);
+    } else {
+      startDate = startOfWeek(currentWeek, { weekStartsOn: 1 });
+      endDate = endOfWeek(currentWeek, { weekStartsOn: 1 });
+    }
+    
+    const { data } = await supabase
       .from("schedules")
       .select("*")
       .eq("workplace_id", workplace.id)
-      .gte("shift_date", format(monthStart, "yyyy-MM-dd"))
-      .lte("shift_date", format(monthEnd, "yyyy-MM-dd"))
+      .gte("shift_date", format(startDate, "yyyy-MM-dd"))
+      .lte("shift_date", format(endDate, "yyyy-MM-dd"))
       .order("shift_date")
       .order("start_time");
 
@@ -61,6 +74,17 @@ export function ScheduleView() {
     isSameDay(new Date(s.shift_date + "T00:00:00"), selectedDate)
   );
 
+  // Week view helpers
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const getSchedulesForDay = (date: Date) => {
+    return schedules.filter(s => 
+      isSameDay(new Date(s.shift_date + "T00:00:00"), date)
+    );
+  };
+
   const handlePreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
   };
@@ -69,35 +93,60 @@ export function ScheduleView() {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
 
+  const handlePreviousWeek = () => {
+    setCurrentWeek(subWeeks(currentWeek, 1));
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeek(addWeeks(currentWeek, 1));
+  };
+
   const handleSelectDate = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
     }
   };
 
-  // Custom day content to show indicators for days with shifts
-  const modifiers = {
-    hasShift: datesWithSchedules,
-  };
-
-  const modifiersStyles = {
-    hasShift: {
-      fontWeight: "bold" as const,
-    },
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
   };
 
   return (
     <div className="h-full flex flex-col bg-background">
       <header className="px-6 py-4 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-foreground">Schema</h1>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(), "EEEE d MMMM", { locale: sv })}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-semibold text-foreground">Schema</h1>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(), "EEEE d MMMM", { locale: sv })}
-            </p>
+          
+          {/* View toggle */}
+          <div className="flex gap-1 bg-secondary rounded-lg p-1">
+            <Button
+              variant={viewMode === "week" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("week")}
+              className="gap-2"
+            >
+              <CalendarDays className="h-4 w-4" />
+              Vecka
+            </Button>
+            <Button
+              variant={viewMode === "month" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("month")}
+              className="gap-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Månad
+            </Button>
           </div>
         </div>
       </header>
@@ -107,9 +156,161 @@ export function ScheduleView() {
           <div className="flex items-center justify-center h-full">
             <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
+        ) : viewMode === "week" ? (
+          /* Week View */
+          <div className="space-y-4">
+            {/* Week navigation */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">
+                    Vecka {format(currentWeek, "w", { locale: sv })} • {format(weekStart, "d MMM", { locale: sv })} - {format(weekEnd, "d MMM yyyy", { locale: sv })}
+                  </CardTitle>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={handlePreviousWeek}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCurrentWeek(new Date())}
+                    >
+                      Idag
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={handleNextWeek}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-7 gap-2">
+                  {weekDays.map((day) => {
+                    const daySchedules = getSchedulesForDay(day);
+                    const isSelected = isSameDay(day, selectedDate);
+                    const isTodayDate = isToday(day);
+                    
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        onClick={() => handleDayClick(day)}
+                        className={cn(
+                          "flex flex-col rounded-lg border p-3 text-left transition-colors min-h-[120px]",
+                          isSelected 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-primary/50 hover:bg-accent/50",
+                          isTodayDate && !isSelected && "border-primary/30 bg-primary/5"
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={cn(
+                            "text-xs font-medium uppercase",
+                            isTodayDate ? "text-primary" : "text-muted-foreground"
+                          )}>
+                            {format(day, "EEE", { locale: sv })}
+                          </span>
+                          <span className={cn(
+                            "text-lg font-semibold",
+                            isTodayDate ? "text-primary" : "text-foreground"
+                          )}>
+                            {format(day, "d")}
+                          </span>
+                        </div>
+                        
+                        <div className="flex-1 space-y-1">
+                          {daySchedules.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">Ledigt</span>
+                          ) : (
+                            daySchedules.slice(0, 3).map((schedule) => (
+                              <div 
+                                key={schedule.id}
+                                className={cn(
+                                  "text-xs rounded px-1.5 py-0.5 truncate",
+                                  schedule.is_approved 
+                                    ? "bg-primary/10 text-primary" 
+                                    : "bg-secondary text-muted-foreground"
+                                )}
+                              >
+                                {schedule.start_time.slice(0, 5)}
+                                {schedule.user_name && ` • ${schedule.user_name.split(' ')[0]}`}
+                              </div>
+                            ))
+                          )}
+                          {daySchedules.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{daySchedules.length - 3} till
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Selected day details */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  {format(selectedDate, "EEEE d MMMM", { locale: sv })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedDateSchedules.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Calendar className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Inga pass denna dag
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {selectedDateSchedules.map((schedule) => (
+                      <div
+                        key={schedule.id}
+                        className="bg-secondary/50 rounded-lg p-3 space-y-2"
+                      >
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-mono font-medium">
+                            {schedule.start_time} - {schedule.end_time}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{schedule.user_name || "Ej tilldelad"}</span>
+                        </div>
+                        {schedule.role && (
+                          <span className="inline-block text-xs bg-background text-foreground px-2 py-1 rounded">
+                            {schedule.role}
+                          </span>
+                        )}
+                        {schedule.is_approved ? (
+                          <span className="block text-xs text-primary">✓ Godkänt</span>
+                        ) : (
+                          <span className="block text-xs text-muted-foreground">Väntar på godkännande</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         ) : (
+          /* Month View */
           <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-            {/* Calendar */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -144,8 +345,6 @@ export function ScheduleView() {
                   month={currentMonth}
                   onMonthChange={setCurrentMonth}
                   locale={sv}
-                  modifiers={modifiers}
-                  modifiersStyles={modifiersStyles}
                   className="w-full pointer-events-auto"
                   classNames={{
                     months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
@@ -183,7 +382,6 @@ export function ScheduleView() {
               </CardContent>
             </Card>
 
-            {/* Selected day details */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">
