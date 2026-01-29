@@ -296,6 +296,50 @@ export type Database = {
           },
         ]
       }
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          recipient_id: string
+          recipient_name: string
+          sender_id: string
+          sender_name: string
+          workplace_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_id: string
+          recipient_name: string
+          sender_id: string
+          sender_name: string
+          workplace_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          recipient_id?: string
+          recipient_name?: string
+          sender_id?: string
+          sender_name?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       important_times: {
         Row: {
           created_at: string
