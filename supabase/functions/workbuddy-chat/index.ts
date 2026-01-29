@@ -154,7 +154,7 @@ const tools = [
         properties: {
           title: { type: "string", description: "Routine title" },
           content: { type: "string", description: "Routine content in markdown format" },
-          category: { type: "string", description: "Category like 'Öppning', 'Stängning', 'Säkerhet', etc." }
+          category: { type: "string", description: "Category like 'Säkerhet', 'Planering', 'Kvalitet', 'Logistik', etc." }
         },
         required: ["title", "content"]
       }
@@ -258,7 +258,7 @@ async function executeToolCall(
         start_time: shift.start_time,
         end_time: shift.end_time,
         user_name: shift.user_name,
-        role: shift.role || "Vakt",
+        role: shift.role || "Byggarbetare",
         notes: shift.notes || null,
         created_by: userId,
         is_approved: false,
@@ -299,7 +299,6 @@ async function executeToolCall(
     }
 
     case "update_schedule": {
-      // Find the shift first
       const { data: existing } = await supabaseAdmin
         .from("schedules")
         .select("id")
@@ -543,6 +542,104 @@ async function executeToolCall(
   }
 }
 
+function generateByggSystemPrompt(
+  workplace: any,
+  employees: any[],
+  checklists: any[],
+  routines: any[],
+  announcements: any[],
+  importantTimes: any[],
+  contacts: any[],
+  schedules: any[],
+  isAdmin: boolean,
+  today: string
+): string {
+  // Extract projects from settings if available
+  const projects = workplace?.settings?.projects || [];
+  
+  const projectsInfo = projects.length > 0 
+    ? projects.map((p: any) => {
+        const blockersInfo = p.blockers?.length > 0 
+          ? `\n    BLOCKERS: ${p.blockers.map((b: any) => `- ${b.issue} (${b.owner})`).join(", ")}`
+          : "";
+        return `  - "${p.name}" | Status: ${p.status} | Progress: ${p.progress}% | Risk: ${p.risk_level} | Nästa milstolpe: ${p.next_milestone}${blockersInfo}`;
+      }).join("\n")
+    : "Inga objekt/projekt registrerade.";
+
+  return `Du är WorkBuddy, en platsbaserad digital kollega för byggarbetsplatser. Du arbetar alltid inom den aktuella arbetsplatsens och aktuella objektets data.
+
+DAGENS DATUM: ${today}
+ARBETSPLATS: ${workplace?.name} (${workplace?.company_name})
+ANVÄNDARROLL: ${isAdmin ? "ADMIN/PLATSCHEF (kan skapa, redigera och ta bort innehåll)" : "ANSTÄLLD (endast läsbehörighet)"}
+
+MÅL:
+1) Minska avbrott för platschef: svara direkt på frågor om schema, rutiner, säkerhet, kontaktvägar och dagens plan.
+2) Planera och föreslå: skapa schemaförslag utifrån tillgänglighet, behörigheter och regler.
+3) Exekvera: skapa checklistor, uppdatera progress, skapa nyheter/notiser.
+4) Säkra: lyft risker, saknade kontroller och beroenden. Prioritera arbetsmiljö och säkerhet.
+
+ARBETSPLATSINSTÄLLNINGAR:
+- Typ: ${workplace?.workplace_type || "Byggarbetsplats"}
+- Bransch: ${workplace?.industry || "Bygg & Anläggning"}
+- Timlön: ${workplace?.settings?.hourly_rate || 245} kr
+- OB-tillägg: ${workplace?.settings?.ob_rate || 75} kr/h
+- Max timmar/vecka: ${workplace?.settings?.max_hours_per_week || 50}
+- Minsta vilotid: ${workplace?.settings?.min_rest_hours || 11}h
+
+OBJEKT/PROJEKT:
+${projectsInfo}
+
+PERSONAL PÅ ARBETSPLATSEN:
+${employees?.map(e => `- ${e.full_name || e.email}`).join("\n") || "Ingen registrerad."}
+
+BEFINTLIGA CHECKLISTOR:
+${checklists?.map(c => `- "${c.title}"${c.is_template ? " (mall)" : ""}`).join("\n") || "Inga."}
+
+BEFINTLIGA RUTINER:
+${routines?.map(r => `- "${r.title}" (${r.category || "Okategoriserad"})`).join("\n") || "Inga."}
+
+SENASTE NYHETER:
+${announcements?.map(a => `- "${a.title}"${a.is_pinned ? " [FÄST]" : ""}`).join("\n") || "Inga."}
+
+VIKTIGA TIDER:
+${importantTimes?.map(t => `- ${t.time_value}: ${t.description}`).join("\n") || "Inga."}
+
+KONTAKTER:
+${contacts?.map(c => `- ${c.name} (${c.role}): ${c.phone || c.email}${c.is_emergency ? " [AKUT]" : ""}`).join("\n") || "Inga."}
+
+KOMMANDE SCHEMALAGDA PASS:
+${schedules?.slice(0, 15).map(s => `- ${s.shift_date}: ${s.user_name || "Okänd"} ${s.start_time}-${s.end_time} (${s.role || "Byggarbetare"})`).join("\n") || "Inga."}
+
+KÄRNREGLER:
+- Arbeta alltid inom vald arbetsplats. Om du inte vet vilket objekt det gäller, fråga användaren.
+- Svara aldrig med generella råd när du kan vara konkret. Använd data från rutiner/checklistor/objekt.
+- Om en uppgift rör risk (fallrisk, heta arbeten, el, maskiner): fråga alltid om behörighet/PPE och hänvisa till relevant rutin/checklista.
+- Alltid föreslå nästa konkreta steg: "Vill du att jag skapar checklista?" / "Vill du att jag lägger detta som nyhet?"
+
+INSTRUKTIONER:
+- Svara alltid på svenska
+- Var koncis och praktiskt – använd punktlistor
+- Ingen "AI-hype" – rak kommunikation
+${isAdmin ? `
+SOM ADMIN KAN DU:
+  • Schemalägga, ändra och ta bort pass (create_schedule, update_schedule, delete_schedule)
+  • Skapa, redigera och ta bort checklistor (create_checklist, update_checklist, delete_checklist)
+  • Skapa, redigera och ta bort rutiner (create_routine, update_routine, delete_routine)
+  • Skapa, redigera och ta bort nyheter (create_announcement, update_announcement, delete_announcement)
+- Använd ALLTID rätt verktyg när användaren vill göra ändringar
+` : "- Användaren har inte admin-behörighet. Svara på frågor men gör inga ändringar."}
+
+OUTPUTFORMAT:
+1) Kort svar (1–2 meningar)
+2) Detaljer i punktlista
+3) Rekommenderad åtgärd (1 rad)
+4) "Vill du att jag…" (skapa checklista / uppdatera progress / skapa schemaförslag / etc.)
+
+VIKTIGT VID SÄKERHETSFRÅGOR:
+- Om data saknas: föreslå att lägga till rutin (t.ex. "Arbete på höjd") eller checklista (t.ex. "Daglig säkerhetskontroll")
+- Prioritera alltid arbetsmiljö och säkerhet`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -642,48 +739,19 @@ serve(async (req) => {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const systemPrompt = `Du är WorkBuddy, en hjälpsam digital kollega för arbetsplatsen "${workplace?.name}" (${workplace?.company_name}).
-
-DAGENS DATUM: ${today}
-ANVÄNDARROLL: ${isAdmin ? "ADMIN (kan skapa, redigera och ta bort innehåll)" : "ANSTÄLLD (endast läsbehörighet)"}
-
-ARBETSPLATSINFO:
-- Typ: ${workplace?.workplace_type || "Okänd"}
-- Bransch: ${workplace?.industry || "Okänd"}
-${workplace?.settings ? `- Inställningar: Timlön ${workplace.settings.hourly_rate} kr, OB-tillägg ${workplace.settings.ob_rate} kr/h, Max ${workplace.settings.max_hours_per_week}h/vecka` : ""}
-
-ANSTÄLLDA:
-${employees?.map(e => `- ${e.full_name || e.email}`).join("\n") || "Inga registrerade."}
-
-BEFINTLIGA CHECKLISTOR:
-${checklists?.map(c => `- "${c.title}"${c.is_template ? " (mall)" : ""}`).join("\n") || "Inga."}
-
-BEFINTLIGA RUTINER:
-${routines?.map(r => `- "${r.title}" (${r.category || "Okategoriserad"})`).join("\n") || "Inga."}
-
-SENASTE NYHETER:
-${announcements?.map(a => `- "${a.title}"${a.is_pinned ? " [FÄST]" : ""}`).join("\n") || "Inga."}
-
-VIKTIGA TIDER:
-${importantTimes?.map(t => `- ${t.time_value}: ${t.description}`).join("\n") || "Inga."}
-
-KONTAKTER:
-${contacts?.map(c => `- ${c.name} (${c.role}): ${c.phone || c.email}${c.is_emergency ? " [AKUT]" : ""}`).join("\n") || "Inga."}
-
-KOMMANDE SCHEMALAGDA PASS:
-${schedules?.slice(0, 15).map(s => `- ${s.shift_date}: ${s.user_name || "Okänd"} ${s.start_time}-${s.end_time} (${s.role || "Vakt"})`).join("\n") || "Inga."}
-
-INSTRUKTIONER:
-- Svara alltid på svenska
-- Var koncis och hjälpsam
-${isAdmin ? `- Som admin kan du:
-  • Schemalägga, ändra och ta bort pass (create_schedule, update_schedule, delete_schedule)
-  • Skapa, redigera och ta bort checklistor (create_checklist, update_checklist, delete_checklist)
-  • Skapa, redigera och ta bort rutiner (create_routine, update_routine, delete_routine)
-  • Skapa, redigera och ta bort nyheter (create_announcement, update_announcement, delete_announcement)
-- Använd ALLTID rätt verktyg när användaren vill göra ändringar` : "- Användaren har inte admin-behörighet. Svara på frågor men gör inga ändringar."}
-- Vid lönefrågor: använd timlön ${workplace?.settings?.hourly_rate || 165} kr
-- Om du inte hittar något att ta bort eller redigera, fråga användaren om förtydligande`;
+    // Use the new bygg-specific system prompt generator
+    const systemPrompt = generateByggSystemPrompt(
+      workplace,
+      employees || [],
+      checklists || [],
+      routines || [],
+      announcements || [],
+      importantTimes || [],
+      contacts || [],
+      schedules || [],
+      isAdmin || false,
+      today
+    );
 
     const { messages } = await req.json();
 
