@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutGrid } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -23,7 +23,7 @@ interface Schedule {
 type ViewMode = "month" | "week";
 
 export function ScheduleView() {
-  const { workplace } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -32,13 +32,13 @@ export function ScheduleView() {
   const [viewMode, setViewMode] = useState<ViewMode>("week");
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       fetchSchedules();
     }
-  }, [workplace?.id, currentMonth, currentWeek, viewMode]);
+  }, [activeWorkplace?.id, currentMonth, currentWeek, viewMode]);
 
   const fetchSchedules = async () => {
-    if (!workplace?.id) return;
+    if (!activeWorkplace?.id) return;
     
     let startDate: Date;
     let endDate: Date;
@@ -54,7 +54,7 @@ export function ScheduleView() {
     const { data } = await supabase
       .from("schedules")
       .select("*")
-      .eq("workplace_id", workplace.id)
+      .eq("workplace_id", activeWorkplace.id)
       .gte("shift_date", format(startDate, "yyyy-MM-dd"))
       .lte("shift_date", format(endDate, "yyyy-MM-dd"))
       .order("shift_date")

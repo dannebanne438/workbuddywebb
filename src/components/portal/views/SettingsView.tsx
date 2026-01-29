@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings, Clock, Phone, FileText } from "lucide-react";
 
@@ -19,30 +20,31 @@ interface Contact {
 }
 
 export function SettingsView() {
-  const { workplace, isWorkplaceAdmin } = useAuth();
+  const { isWorkplaceAdmin } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [times, setTimes] = useState<ImportantTime[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       fetchData();
     }
-  }, [workplace?.id]);
+  }, [activeWorkplace?.id]);
 
   const fetchData = async () => {
-    if (!workplace?.id) return;
+    if (!activeWorkplace?.id) return;
 
     const [timesRes, contactsRes] = await Promise.all([
       supabase
         .from("important_times")
         .select("*")
-        .eq("workplace_id", workplace.id)
+        .eq("workplace_id", activeWorkplace.id)
         .order("sort_order"),
       supabase
         .from("contacts")
         .select("*")
-        .eq("workplace_id", workplace.id)
+        .eq("workplace_id", activeWorkplace.id)
         .order("sort_order"),
     ]);
 
@@ -59,7 +61,7 @@ export function SettingsView() {
     );
   }
 
-  const settings = workplace?.settings as Record<string, unknown> | null;
+  const settings = activeWorkplace?.settings as Record<string, unknown> | null;
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -91,19 +93,19 @@ export function SettingsView() {
               <dl className="space-y-3">
                 <div>
                   <dt className="text-xs text-muted-foreground uppercase">Namn</dt>
-                  <dd className="text-foreground">{workplace?.name}</dd>
+                  <dd className="text-foreground">{activeWorkplace?.name}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground uppercase">Företag</dt>
-                  <dd className="text-foreground">{workplace?.company_name}</dd>
+                  <dd className="text-foreground">{activeWorkplace?.company_name}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground uppercase">Platskod</dt>
-                  <dd className="font-mono text-primary">{workplace?.workplace_code}</dd>
+                  <dd className="font-mono text-primary">{activeWorkplace?.workplace_code}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground uppercase">Typ</dt>
-                  <dd className="text-foreground">{workplace?.workplace_type || "Ej angiven"}</dd>
+                  <dd className="text-foreground">{activeWorkplace?.workplace_type || "Ej angiven"}</dd>
                 </div>
               </dl>
             </div>

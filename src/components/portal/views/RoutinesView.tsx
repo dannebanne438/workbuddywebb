@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -12,24 +12,24 @@ interface Routine {
 }
 
 export function RoutinesView() {
-  const { workplace } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       fetchRoutines();
     }
-  }, [workplace?.id]);
+  }, [activeWorkplace?.id]);
 
   const fetchRoutines = async () => {
-    if (!workplace?.id) return;
+    if (!activeWorkplace?.id) return;
 
     const { data, error } = await supabase
       .from("routines")
       .select("*")
-      .eq("workplace_id", workplace.id)
+      .eq("workplace_id", activeWorkplace.id)
       .order("sort_order");
 
     if (data) {

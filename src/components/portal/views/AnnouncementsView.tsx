@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Bell, Pin } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -13,23 +13,23 @@ interface Announcement {
 }
 
 export function AnnouncementsView() {
-  const { workplace } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       fetchAnnouncements();
     }
-  }, [workplace?.id]);
+  }, [activeWorkplace?.id]);
 
   const fetchAnnouncements = async () => {
-    if (!workplace?.id) return;
+    if (!activeWorkplace?.id) return;
 
     const { data, error } = await supabase
       .from("announcements")
       .select("*")
-      .eq("workplace_id", workplace.id)
+      .eq("workplace_id", activeWorkplace.id)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false });
 
