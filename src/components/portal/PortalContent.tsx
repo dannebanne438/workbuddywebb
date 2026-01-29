@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChatView } from "./views/ChatView";
+import { TeamChatView } from "./views/TeamChatView";
 import { ScheduleView } from "./views/ScheduleView";
 import { ChecklistsView } from "./views/ChecklistsView";
 import { RoutinesView } from "./views/RoutinesView";
@@ -12,7 +13,7 @@ import { PortalSidebar } from "./PortalSidebar";
 import { OnboardingModal } from "../onboarding/OnboardingModal";
 import { useAuth } from "@/contexts/AuthContext";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat";
 
 const ONBOARDING_KEY = "workbuddy_onboarding_complete";
 
@@ -49,6 +50,8 @@ export function PortalContent() {
     switch (currentView) {
       case "chat":
         return <ChatView />;
+      case "team-chat":
+        return <TeamChatView />;
       case "schedule":
         return <ScheduleView />;
       case "checklists":

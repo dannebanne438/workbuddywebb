@@ -15,9 +15,10 @@ import {
   ChevronRight,
   Shield,
   Home,
+  MessagesSquare,
 } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat";
 
 interface PortalSidebarProps {
   currentView?: PortalView;
@@ -36,6 +37,7 @@ export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSide
 
   const navItems = [
     { id: "chat" as const, label: "WorkBuddy", icon: MessageSquare },
+    { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },
     { id: "routines" as const, label: "Rutiner", icon: Book },
