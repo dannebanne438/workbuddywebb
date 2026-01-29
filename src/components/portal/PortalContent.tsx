@@ -10,6 +10,7 @@ import { SettingsView } from "./views/SettingsView";
 import { SuperAdminView } from "./views/SuperAdminView";
 import { WorkplaceDetailView } from "./views/WorkplaceDetailView";
 import { PortalSidebar } from "./PortalSidebar";
+import { MobileNav } from "./MobileNav";
 import { OnboardingModal } from "../onboarding/OnboardingModal";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,6 +23,7 @@ export function PortalContent() {
   const [currentView, setCurrentView] = useState<PortalView>("chat");
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -82,9 +84,22 @@ export function PortalContent() {
 
   return (
     <>
+      {/* Mobile Navigation */}
+      <MobileNav
+        currentView={currentView}
+        onViewChange={setCurrentView}
+        open={mobileNavOpen}
+        onOpenChange={setMobileNavOpen}
+      />
+
       <div className="flex h-screen">
-        <PortalSidebar currentView={currentView} onViewChange={setCurrentView} />
-        <div className="flex-1 overflow-hidden">
+        {/* Desktop Sidebar - hidden on mobile */}
+        <div className="hidden md:block">
+          <PortalSidebar currentView={currentView} onViewChange={setCurrentView} />
+        </div>
+        
+        {/* Main Content - with top padding on mobile for header */}
+        <div className="flex-1 overflow-hidden pt-14 md:pt-0">
           {renderView()}
         </div>
       </div>
