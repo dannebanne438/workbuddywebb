@@ -5,10 +5,10 @@ import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutG
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isToday } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isToday, addDays, subDays } from "date-fns";
 import { sv } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-
+import { useIsMobile } from "@/hooks/use-mobile";
 interface Schedule {
   id: string;
   shift_date: string;
@@ -30,6 +30,7 @@ export function ScheduleView() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (activeWorkplace?.id) {
@@ -111,47 +112,56 @@ export function ScheduleView() {
     setSelectedDate(date);
   };
 
+  // Mobile day navigation
+  const handlePreviousDay = () => {
+    setSelectedDate(subDays(selectedDate, 1));
+  };
+
+  const handleNextDay = () => {
+    setSelectedDate(addDays(selectedDate, 1));
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
-      <header className="px-6 py-4 border-b border-border bg-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-primary" />
+      <header className="px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </div>
-            <div>
-              <h1 className="font-semibold text-foreground">Schema</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="font-semibold text-foreground text-sm md:text-base">Schema</h1>
+              <p className="text-xs md:text-sm text-muted-foreground truncate">
                 {format(new Date(), "EEEE d MMMM", { locale: sv })}
               </p>
             </div>
           </div>
           
           {/* View toggle */}
-          <div className="flex gap-1 bg-secondary rounded-lg p-1">
+          <div className="flex gap-1 bg-secondary rounded-lg p-1 shrink-0">
             <Button
               variant={viewMode === "week" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("week")}
-              className="gap-2"
+              className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
             >
-              <CalendarDays className="h-4 w-4" />
-              Vecka
+              <CalendarDays className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Vecka</span>
             </Button>
             <Button
               variant={viewMode === "month" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("month")}
-              className="gap-2"
+              className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
             >
-              <LayoutGrid className="h-4 w-4" />
-              Månad
+              <LayoutGrid className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Månad</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -161,16 +171,18 @@ export function ScheduleView() {
           <div className="space-y-4">
             {/* Week navigation */}
             <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    Vecka {format(currentWeek, "w", { locale: sv })} • {format(weekStart, "d MMM", { locale: sv })} - {format(weekEnd, "d MMM yyyy", { locale: sv })}
+              <CardHeader className="pb-2 md:pb-3 px-3 md:px-6">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-base md:text-lg">
+                    <span className="hidden sm:inline">Vecka {format(currentWeek, "w", { locale: sv })} • </span>
+                    <span className="sm:hidden">V{format(currentWeek, "w", { locale: sv })} </span>
+                    {format(weekStart, "d MMM", { locale: sv })} - {format(weekEnd, "d MMM", { locale: sv })}
                   </CardTitle>
                   <div className="flex gap-1">
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="h-8 w-8"
+                      className="h-7 w-7 md:h-8 md:w-8"
                       onClick={handlePreviousWeek}
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -179,13 +191,14 @@ export function ScheduleView() {
                       variant="outline" 
                       size="sm"
                       onClick={() => setCurrentWeek(new Date())}
+                      className="text-xs md:text-sm px-2 md:px-3 h-7 md:h-8"
                     >
                       Idag
                     </Button>
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="h-8 w-8"
+                      className="h-7 w-7 md:h-8 md:w-8"
                       onClick={handleNextWeek}
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -193,8 +206,9 @@ export function ScheduleView() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-7 gap-2">
+              <CardContent className="px-3 md:px-6">
+                {/* Desktop: Full week grid */}
+                <div className="hidden md:grid grid-cols-7 gap-2">
                   {weekDays.map((day) => {
                     const daySchedules = getSchedulesForDay(day);
                     const isSelected = isSameDay(day, selectedDate);
@@ -256,50 +270,115 @@ export function ScheduleView() {
                     );
                   })}
                 </div>
+
+                {/* Mobile: Horizontal scroll day picker */}
+                <div className="md:hidden">
+                  <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    {weekDays.map((day) => {
+                      const daySchedules = getSchedulesForDay(day);
+                      const isSelected = isSameDay(day, selectedDate);
+                      const isTodayDate = isToday(day);
+                      
+                      return (
+                        <button
+                          key={day.toISOString()}
+                          onClick={() => handleDayClick(day)}
+                          className={cn(
+                            "flex flex-col items-center rounded-xl border p-2 min-w-[52px] transition-colors shrink-0",
+                            isSelected 
+                              ? "border-primary bg-primary text-primary-foreground" 
+                              : "border-border",
+                            isTodayDate && !isSelected && "border-primary/50 bg-primary/10"
+                          )}
+                        >
+                          <span className={cn(
+                            "text-[10px] font-medium uppercase",
+                            isSelected ? "text-primary-foreground" : isTodayDate ? "text-primary" : "text-muted-foreground"
+                          )}>
+                            {format(day, "EEE", { locale: sv })}
+                          </span>
+                          <span className={cn(
+                            "text-lg font-bold",
+                            isSelected ? "text-primary-foreground" : isTodayDate ? "text-primary" : "text-foreground"
+                          )}>
+                            {format(day, "d")}
+                          </span>
+                          {daySchedules.length > 0 && (
+                            <div className={cn(
+                              "w-1.5 h-1.5 rounded-full mt-0.5",
+                              isSelected ? "bg-primary-foreground" : "bg-primary"
+                            )} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
             {/* Selected day details */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  {format(selectedDate, "EEEE d MMMM", { locale: sv })}
-                </CardTitle>
+              <CardHeader className="pb-2 md:pb-3 px-3 md:px-6">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm md:text-base">
+                    {format(selectedDate, "EEEE d MMMM", { locale: sv })}
+                  </CardTitle>
+                  {/* Mobile day navigation */}
+                  <div className="flex gap-1 md:hidden">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-7 w-7"
+                      onClick={handlePreviousDay}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-7 w-7"
+                      onClick={handleNextDay}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 md:px-6">
                 {selectedDateSchedules.length === 0 ? (
-                  <div className="text-center py-6">
-                    <Calendar className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
+                  <div className="text-center py-4 md:py-6">
+                    <Calendar className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Inga pass denna dag
                     </p>
                   </div>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-2 md:gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {selectedDateSchedules.map((schedule) => (
                       <div
                         key={schedule.id}
-                        className="bg-secondary/50 rounded-lg p-3 space-y-2"
+                        className="bg-secondary/50 rounded-lg p-2.5 md:p-3 space-y-1.5 md:space-y-2"
                       >
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                           <span className="font-mono font-medium">
-                            {schedule.start_time} - {schedule.end_time}
+                            {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>{schedule.user_name || "Ej tilldelad"}</span>
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <User className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                          <span className="truncate">{schedule.user_name || "Ej tilldelad"}</span>
                         </div>
                         {schedule.role && (
-                          <span className="inline-block text-xs bg-background text-foreground px-2 py-1 rounded">
+                          <span className="inline-block text-[10px] md:text-xs bg-background text-foreground px-1.5 md:px-2 py-0.5 md:py-1 rounded">
                             {schedule.role}
                           </span>
                         )}
                         {schedule.is_approved ? (
-                          <span className="block text-xs text-primary">✓ Godkänt</span>
+                          <span className="block text-[10px] md:text-xs text-primary">✓ Godkänt</span>
                         ) : (
-                          <span className="block text-xs text-muted-foreground">Väntar på godkännande</span>
+                          <span className="block text-[10px] md:text-xs text-muted-foreground">Väntar på godkännande</span>
                         )}
                       </div>
                     ))}
@@ -337,7 +416,7 @@ export function ScheduleView() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2 md:px-6">
                 <CalendarComponent
                   mode="single"
                   selected={selectedDate}
@@ -351,10 +430,10 @@ export function ScheduleView() {
                     month: "space-y-4 w-full",
                     table: "w-full border-collapse",
                     head_row: "flex w-full",
-                    head_cell: "text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem] text-center",
+                    head_cell: "text-muted-foreground rounded-md flex-1 font-normal text-[0.7rem] md:text-[0.8rem] text-center",
                     row: "flex w-full mt-2",
-                    cell: "flex-1 h-12 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                    day: "h-12 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors",
+                    cell: "flex-1 h-10 md:h-12 text-center text-xs md:text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: "h-10 md:h-12 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors",
                     day_range_end: "day-range-end",
                     day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                     day_today: "bg-accent text-accent-foreground",
@@ -372,7 +451,7 @@ export function ScheduleView() {
                         <div className="relative flex flex-col items-center justify-center h-full w-full">
                           <span>{date.getDate()}</span>
                           {hasShift && (
-                            <div className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-primary" />
+                            <div className="absolute bottom-0.5 md:bottom-1 w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-primary" />
                           )}
                         </div>
                       );
@@ -433,8 +512,8 @@ export function ScheduleView() {
         )}
 
         {!loading && schedules.length === 0 && (
-          <div className="text-center mt-8">
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center mt-6 md:mt-8">
+            <p className="text-xs md:text-sm text-muted-foreground">
               Tips: Fråga WorkBuddy "Lägg schema för vecka 7 för 3 vakter"
             </p>
           </div>
