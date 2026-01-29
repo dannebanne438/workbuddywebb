@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ClipboardList, Check } from "lucide-react";
 
@@ -14,23 +14,23 @@ interface Checklist {
 }
 
 export function ChecklistsView() {
-  const { workplace } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       fetchChecklists();
     }
-  }, [workplace?.id]);
+  }, [activeWorkplace?.id]);
 
   const fetchChecklists = async () => {
-    if (!workplace?.id) return;
+    if (!activeWorkplace?.id) return;
 
     const { data, error } = await supabase
       .from("checklists")
       .select("*")
-      .eq("workplace_id", workplace.id)
+      .eq("workplace_id", activeWorkplace.id)
       .order("created_at", { ascending: false });
 
     if (data) {

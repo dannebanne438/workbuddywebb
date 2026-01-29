@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { WorkplaceSelector } from "./WorkplaceSelector";
 import {
   MessageSquare,
   Calendar,
@@ -26,7 +28,8 @@ interface PortalSidebarProps {
 }
 
 export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSidebarProps) {
-  const { profile, workplace, signOut, isSuperAdmin, isWorkplaceAdmin } = useAuth();
+  const { profile, signOut, isSuperAdmin, isWorkplaceAdmin } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -79,12 +82,15 @@ export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSide
         </Button>
       </div>
 
-      {/* Workplace Info */}
-      {!collapsed && workplace && (
+      {/* Workplace Selector for Super Admin */}
+      {isSuperAdmin && <WorkplaceSelector collapsed={collapsed} />}
+
+      {/* Workplace Info - show for non-super-admins or when collapsed */}
+      {!collapsed && activeWorkplace && !isSuperAdmin && (
         <div className="p-4 border-b border-border">
           <p className="text-xs text-muted-foreground uppercase tracking-wide">Arbetsplats</p>
-          <p className="font-medium text-foreground truncate">{workplace.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{workplace.company_name}</p>
+          <p className="font-medium text-foreground truncate">{activeWorkplace.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{activeWorkplace.company_name}</p>
         </div>
       )}
 

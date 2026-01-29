@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, MessageSquare, Users, User, Hash, Circle } from "lucide-react";
+import { Send, MessageSquare, Users, Hash } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -40,7 +41,8 @@ interface Colleague {
 type ChatMode = "group" | { recipientId: string; recipientName: string };
 
 export function TeamChatView() {
-  const { user, profile, workplace } = useAuth();
+  const { user, profile } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [chatMode, setChatMode] = useState<ChatMode>("group");
   const [teamMessages, setTeamMessages] = useState<TeamMessage[]>([]);
@@ -53,13 +55,13 @@ export function TeamChatView() {
 
   // Fetch colleagues
   useEffect(() => {
-    if (!profile?.workplace_id || !user) return;
+    if (!activeWorkplace?.id || !user) return;
 
     const fetchColleagues = async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, email")
-        .eq("workplace_id", profile.workplace_id)
+        .eq("workplace_id", activeWorkplace.id)
         .neq("id", user.id);
 
       if (!error && data) {
@@ -68,7 +70,7 @@ export function TeamChatView() {
     };
 
     fetchColleagues();
-  }, [profile?.workplace_id, user]);
+  }, [activeWorkplace?.id, user]);
 
   // Fetch unread counts
   useEffect(() => {
@@ -95,14 +97,14 @@ export function TeamChatView() {
 
   // Fetch team messages
   useEffect(() => {
-    if (!profile?.workplace_id || chatMode !== "group") return;
+    if (!activeWorkplace?.id || chatMode !== "group") return;
 
     const fetchMessages = async () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from("team_messages")
         .select("*")
-        .eq("workplace_id", profile.workplace_id)
+        .eq("workplace_id", activeWorkplace.id)
         .order("created_at", { ascending: true })
         .limit(100);
 
@@ -122,7 +124,7 @@ export function TeamChatView() {
           event: "INSERT",
           schema: "public",
           table: "team_messages",
-          filter: `workplace_id=eq.${profile.workplace_id}`,
+          filter: `workplace_id=eq.${activeWorkplace.id}`,
         },
         (payload) => {
           setTeamMessages((prev) => [...prev, payload.new as TeamMessage]);
@@ -133,7 +135,7 @@ export function TeamChatView() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.workplace_id, chatMode]);
+  }, [activeWorkplace?.id, chatMode]);
 
   // Fetch direct messages
   useEffect(() => {
@@ -206,20 +208,20 @@ export function TeamChatView() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || !profile?.workplace_id) return;
+    if (!newMessage.trim() || !user || !activeWorkplace?.id) return;
 
     setIsSending(true);
 
     if (chatMode === "group") {
       await supabase.from("team_messages").insert({
-        workplace_id: profile.workplace_id,
+        workplace_id: activeWorkplace.id,
         sender_id: user.id,
         sender_name: profile.full_name || profile.email,
         content: newMessage.trim(),
       });
     } else {
       await supabase.from("direct_messages").insert({
-        workplace_id: profile.workplace_id,
+        workplace_id: activeWorkplace.id,
         sender_id: user.id,
         sender_name: profile.full_name || profile.email,
         recipient_id: chatMode.recipientId,
@@ -274,7 +276,7 @@ export function TeamChatView() {
 
   const messages = chatMode === "group" ? teamMessages : directMessages;
 
-  if (!profile?.workplace_id) {
+  if (!activeWorkplace?.id) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Ingen arbetsplats tilldelad</p>
@@ -378,7 +380,7 @@ export function TeamChatView() {
               <div>
                 <h1 className="text-lg font-semibold">Gruppchatt</h1>
                 <p className="text-sm text-muted-foreground">
-                  {workplace?.name || "Arbetsplats"}
+                  {activeWorkplace?.name || "Arbetsplats"}
                 </p>
               </div>
             </>

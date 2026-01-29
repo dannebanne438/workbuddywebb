@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useWorkBuddyChat } from "@/hooks/useWorkBuddyChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,24 +43,25 @@ const actionIcons: Record<string, { icon: typeof Calendar; label: string; color:
 };
 
 export function ChatView() {
-  const { session, workplace } = useAuth();
+  const { session } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const { messages, isLoading, error, sendMessage, clearMessages, toolResults } = useWorkBuddyChat();
   const [input, setInput] = useState("");
   const [demoPrompts, setDemoPrompts] = useState<DemoPrompt[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       supabase
         .from("demo_prompts")
         .select("id, prompt_text, category")
-        .eq("workplace_id", workplace.id)
+        .eq("workplace_id", activeWorkplace.id)
         .order("sort_order")
         .then(({ data }) => {
           if (data) setDemoPrompts(data);
         });
     }
-  }, [workplace?.id]);
+  }, [activeWorkplace?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -92,7 +94,7 @@ export function ChatView() {
             <div>
               <h1 className="font-semibold text-foreground">WorkBuddy</h1>
               <p className="text-sm text-muted-foreground">
-                {workplace?.name || "Din digitala kollega"}
+                {activeWorkplace?.name || "Din digitala kollega"}
               </p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Mail, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,30 +21,31 @@ interface InviteCode {
 }
 
 export function EmployeesView() {
-  const { workplace, isWorkplaceAdmin } = useAuth();
+  const { isWorkplaceAdmin } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (workplace?.id) {
+    if (activeWorkplace?.id) {
       fetchData();
     }
-  }, [workplace?.id]);
+  }, [activeWorkplace?.id]);
 
   const fetchData = async () => {
-    if (!workplace?.id) return;
+    if (!activeWorkplace?.id) return;
 
     const [employeesRes, codesRes] = await Promise.all([
       supabase
         .from("profiles")
         .select("id, email, full_name")
-        .eq("workplace_id", workplace.id),
+        .eq("workplace_id", activeWorkplace.id),
       supabase
         .from("invite_codes")
         .select("*")
-        .eq("workplace_id", workplace.id),
+        .eq("workplace_id", activeWorkplace.id),
     ]);
 
     if (employeesRes.data) setEmployees(employeesRes.data);
