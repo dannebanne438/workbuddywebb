@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, MessageSquare, Users, Hash } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Send, MessageSquare, Users, Hash, ChevronLeft, Menu } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { sv } from "date-fns/locale";
 
@@ -51,6 +52,7 @@ export function TeamChatView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [showContacts, setShowContacts] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Fetch colleagues
@@ -284,123 +286,148 @@ export function TeamChatView() {
     );
   }
 
+  // Sidebar content - reusable for desktop and mobile
+  const SidebarContent = () => (
+    <>
+      <div className="p-4 border-b">
+        <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+          Konversationer
+        </h2>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-2 space-y-1">
+          {/* Group chat */}
+          <button
+            onClick={() => {
+              setChatMode("group");
+              setShowContacts(false);
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              chatMode === "group"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`}
+          >
+            <div className={`p-1.5 rounded-lg ${chatMode === "group" ? "bg-primary-foreground/20" : "bg-primary/10"}`}>
+              <Hash className={`h-4 w-4 ${chatMode === "group" ? "text-primary-foreground" : "text-primary"}`} />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-medium">Alla</p>
+              <p className={`text-xs ${chatMode === "group" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                Gruppchatt
+              </p>
+            </div>
+          </button>
+
+          <div className="py-2">
+            <div className="h-px bg-border" />
+          </div>
+
+          <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase">
+            Direktmeddelanden
+          </p>
+
+          {/* Colleagues */}
+          {colleagues.map((colleague) => {
+            const isActive =
+              chatMode !== "group" && chatMode.recipientId === colleague.id;
+            const unread = unreadCounts[colleague.id] || 0;
+            const name = colleague.full_name || colleague.email;
+
+            return (
+              <button
+                key={colleague.id}
+                onClick={() => {
+                  setChatMode({ recipientId: colleague.id, recipientName: name });
+                  setShowContacts(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                }`}
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className={`text-xs ${isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"}`}>
+                    {getInitials(name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-sm font-medium truncate">{name}</p>
+                </div>
+                {unread > 0 && !isActive && (
+                  <span className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                    {unread}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {colleagues.length === 0 && (
+            <p className="px-3 py-2 text-sm text-muted-foreground">
+              Inga kollegor hittades
+            </p>
+          )}
+        </div>
+      </ScrollArea>
+    </>
+  );
+
   return (
     <div className="flex h-full bg-background">
-      {/* Sidebar - Conversations */}
-      <div className="w-64 border-r flex flex-col bg-card">
-        <div className="p-4 border-b">
-          <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Konversationer
-          </h2>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {/* Group chat */}
-            <button
-              onClick={() => setChatMode("group")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                chatMode === "group"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              <div className={`p-1.5 rounded-lg ${chatMode === "group" ? "bg-primary-foreground/20" : "bg-primary/10"}`}>
-                <Hash className={`h-4 w-4 ${chatMode === "group" ? "text-primary-foreground" : "text-primary"}`} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium">Alla</p>
-                <p className={`text-xs ${chatMode === "group" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                  Gruppchatt
-                </p>
-              </div>
-            </button>
-
-            <div className="py-2">
-              <div className="h-px bg-border" />
-            </div>
-
-            <p className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase">
-              Direktmeddelanden
-            </p>
-
-            {/* Colleagues */}
-            {colleagues.map((colleague) => {
-              const isActive =
-                chatMode !== "group" && chatMode.recipientId === colleague.id;
-              const unread = unreadCounts[colleague.id] || 0;
-              const name = colleague.full_name || colleague.email;
-
-              return (
-                <button
-                  key={colleague.id}
-                  onClick={() =>
-                    setChatMode({ recipientId: colleague.id, recipientName: name })
-                  }
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className={`text-xs ${isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"}`}>
-                      {getInitials(name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium truncate">{name}</p>
-                  </div>
-                  {unread > 0 && !isActive && (
-                    <span className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                      {unread}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-
-            {colleagues.length === 0 && (
-              <p className="px-3 py-2 text-sm text-muted-foreground">
-                Inga kollegor hittades
-              </p>
-            )}
-          </div>
-        </ScrollArea>
+      {/* Desktop Sidebar - Conversations */}
+      <div className="hidden md:flex w-64 border-r flex-col bg-card">
+        <SidebarContent />
       </div>
 
       {/* Main chat area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="border-b p-4 flex items-center gap-3">
+        <div className="border-b p-3 md:p-4 flex items-center gap-3">
+          {/* Mobile: Show contacts sheet trigger */}
+          <Sheet open={showContacts} onOpenChange={setShowContacts}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden shrink-0">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <div className="flex flex-col h-full">
+                <SidebarContent />
+              </div>
+            </SheetContent>
+          </Sheet>
+
           {chatMode === "group" ? (
             <>
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Users className="h-5 w-5 text-primary" />
               </div>
-              <div>
-                <h1 className="text-lg font-semibold">Gruppchatt</h1>
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <h1 className="text-base md:text-lg font-semibold truncate">Gruppchatt</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">
                   {activeWorkplace?.name || "Arbetsplats"}
                 </p>
               </div>
             </>
           ) : (
             <>
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary/10 text-primary">
+              <Avatar className="h-9 w-9 md:h-10 md:w-10 shrink-0">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm">
                   {getInitials(chatMode.recipientName)}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h1 className="text-lg font-semibold">{chatMode.recipientName}</h1>
-                <p className="text-sm text-muted-foreground">Direktmeddelande</p>
+              <div className="min-w-0">
+                <h1 className="text-base md:text-lg font-semibold truncate">{chatMode.recipientName}</h1>
+                <p className="text-xs md:text-sm text-muted-foreground">Direktmeddelande</p>
               </div>
             </>
           )}
         </div>
 
         {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-3 md:p-4">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-muted-foreground">Laddar meddelanden...</p>
@@ -477,7 +504,7 @@ export function TeamChatView() {
         </ScrollArea>
 
         {/* Input */}
-        <div className="border-t p-4">
+        <div className="border-t p-3 md:p-4">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <Input
               value={newMessage}
