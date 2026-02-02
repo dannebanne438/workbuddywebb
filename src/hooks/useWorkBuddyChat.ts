@@ -15,13 +15,20 @@ interface ToolResult {
   shift?: any;
 }
 
+interface SendMessageOptions {
+  session: { access_token: string } | null;
+  workplaceId?: string | null;
+}
+
 export function useWorkBuddyChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toolResults, setToolResults] = useState<ToolResult[]>([]);
 
-  const sendMessage = useCallback(async (input: string, session: { access_token: string } | null) => {
+  const sendMessage = useCallback(async (input: string, options: SendMessageOptions) => {
+    const { session, workplaceId } = options;
+    
     if (!session?.access_token) {
       setError("Not authenticated");
       return;
@@ -42,7 +49,10 @@ export function useWorkBuddyChat() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ messages: [...messages, userMsg] }),
+          body: JSON.stringify({ 
+            messages: [...messages, userMsg],
+            workplaceId: workplaceId || undefined
+          }),
         }
       );
 

@@ -745,6 +745,9 @@ serve(async (req) => {
 
     const isAdmin = userRoles?.some(r => r.role === "super_admin" || r.role === "workplace_admin");
 
+    // Get request body
+    const { messages, workplaceId: requestedWorkplaceId } = await req.json();
+
     // Get user's workplace
     const { data: profile } = await supabase
       .from("profiles")
@@ -753,19 +756,32 @@ serve(async (req) => {
       .single();
 
     let workplaceId = profile?.workplace_id;
+    const isSuperAdmin = userRoles?.some(r => r.role === "super_admin");
 
-    if (!workplaceId) {
-      const isSuperAdmin = userRoles?.some(r => r.role === "super_admin");
-      if (isSuperAdmin) {
-        const { data: firstWorkplace } = await supabase
-          .from("workplaces")
-          .select("id")
-          .limit(1)
-          .single();
-        
-        if (firstWorkplace) {
-          workplaceId = firstWorkplace.id;
-        }
+    // Super admin can specify a different workplace
+    if (isSuperAdmin && requestedWorkplaceId) {
+      // Verify the workplace exists
+      const { data: targetWorkplace } = await supabase
+        .from("workplaces")
+        .select("id")
+        .eq("id", requestedWorkplaceId)
+        .single();
+      
+      if (targetWorkplace) {
+        workplaceId = targetWorkplace.id;
+      }
+    }
+
+    // Fallback for super admin without workplace
+    if (!workplaceId && isSuperAdmin) {
+      const { data: firstWorkplace } = await supabase
+        .from("workplaces")
+        .select("id")
+        .limit(1)
+        .single();
+      
+      if (firstWorkplace) {
+        workplaceId = firstWorkplace.id;
       }
     }
 
@@ -813,7 +829,7 @@ serve(async (req) => {
       today
     );
 
-    const { messages } = await req.json();
+    // messages were already extracted at line 749
 
     // First call with tools (only if admin)
     const aiPayload: any = {

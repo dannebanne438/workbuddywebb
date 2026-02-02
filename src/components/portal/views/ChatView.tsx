@@ -99,12 +99,12 @@ export function ChatView() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    sendMessage(input.trim(), session);
+    sendMessage(input.trim(), { session, workplaceId: activeWorkplace?.id });
     setInput("");
   };
 
   const handlePromptClick = (prompt: string) => {
-    sendMessage(prompt, session);
+    sendMessage(prompt, { session, workplaceId: activeWorkplace?.id });
   };
 
   const getActionDisplay = (action: string) => {
