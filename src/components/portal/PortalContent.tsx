@@ -11,6 +11,7 @@ import { SuperAdminView } from "./views/SuperAdminView";
 import { WorkplaceDetailView } from "./views/WorkplaceDetailView";
 import { PortalSidebar } from "./PortalSidebar";
 import { MobileNav } from "./MobileNav";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { OnboardingModal } from "../onboarding/OnboardingModal";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -84,12 +85,19 @@ export function PortalContent() {
 
   return (
     <>
-      {/* Mobile Navigation */}
+      {/* Mobile Top Header */}
       <MobileNav
         currentView={currentView}
         onViewChange={setCurrentView}
         open={mobileNavOpen}
         onOpenChange={setMobileNavOpen}
+      />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        currentView={currentView}
+        onViewChange={setCurrentView}
+        onOpenMore={() => setMobileNavOpen(true)}
       />
 
       <div className="flex h-screen">
@@ -98,8 +106,8 @@ export function PortalContent() {
           <PortalSidebar currentView={currentView} onViewChange={setCurrentView} />
         </div>
         
-        {/* Main Content - with top padding on mobile for header */}
-        <div className="flex-1 overflow-hidden pt-14 md:pt-0">
+        {/* Main Content - with top padding on mobile for header, bottom padding for nav */}
+        <div className="flex-1 overflow-hidden pt-14 pb-16 md:pt-0 md:pb-0">
           {renderView()}
         </div>
       </div>
