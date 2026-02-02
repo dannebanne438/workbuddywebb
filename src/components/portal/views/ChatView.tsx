@@ -23,7 +23,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { RequestAdminAccess } from "../RequestAdminAccess";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DemoPrompt {
   id: string;
@@ -275,24 +274,24 @@ export function ChatView() {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-border bg-card">
+      <div className="p-3 sm:p-4 border-t border-border bg-card">
         {/* Speech error display */}
         {speechError && (
           <div className="flex items-center gap-2 text-destructive bg-destructive/10 px-3 py-2 rounded-lg mb-2 text-sm">
-            <MicOff className="h-4 w-4" />
-            <span>{speechError}</span>
+            <MicOff className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{speechError}</span>
           </div>
         )}
         
-        {/* Listening indicator */}
+        {/* Listening indicator - more prominent on mobile */}
         {isListening && (
-          <div className="flex items-center gap-2 text-accent px-3 py-2 mb-2 text-sm">
+          <div className="flex items-center justify-center gap-3 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 mb-3">
             <div className="relative">
-              <Mic className="h-4 w-4 text-destructive" />
-              <span className="absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full animate-pulse" />
+              <Mic className="h-5 w-5 text-destructive animate-pulse" />
+              <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full animate-ping" />
             </div>
-            <span className="text-muted-foreground">
-              Lyssnar... {interimTranscript && <span className="text-foreground italic">"{interimTranscript}"</span>}
+            <span className="text-sm font-medium text-foreground">
+              {interimTranscript ? `"${interimTranscript}"` : "Lyssnar..."}
             </span>
           </div>
         )}
@@ -301,36 +300,31 @@ export function ChatView() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isListening ? "Prata nu..." : "T.ex. 'Schemalägg Erik på måndag 08-16'"}
-            className="h-12"
+            placeholder={isListening ? "Prata nu..." : "Skriv eller prata..."}
+            className="h-12 text-base"
             disabled={isLoading}
           />
           
-          {/* Microphone button */}
+          {/* Microphone button - larger touch target for mobile */}
           {isSpeechSupported && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant={isListening ? "destructive" : "outline"}
-                    size="lg"
-                    onClick={handleMicClick}
-                    disabled={isLoading}
-                    className={isListening ? "animate-pulse" : ""}
-                    aria-label={isListening ? "Stoppa inspelning" : "Starta röstinmatning"}
-                  >
-                    {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isListening ? "Klicka för att stoppa" : "Klicka för att prata"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button
+              type="button"
+              variant={isListening ? "destructive" : "secondary"}
+              onClick={handleMicClick}
+              disabled={isLoading}
+              className={`h-12 w-12 flex-shrink-0 ${isListening ? "animate-pulse" : ""}`}
+              aria-label={isListening ? "Stoppa inspelning" : "Starta röstinmatning"}
+            >
+              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
           )}
           
-          <Button type="submit" variant="hero" size="lg" disabled={isLoading || !input.trim()}>
+          <Button 
+            type="submit" 
+            variant="hero" 
+            className="h-12 w-12 flex-shrink-0"
+            disabled={isLoading || !input.trim()}
+          >
             <Send className="h-5 w-5" />
           </Button>
         </form>
