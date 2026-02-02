@@ -1,212 +1,96 @@
 
-# WorkBuddy Förbättringsplan
+# Röstinmatning för WorkBuddy
 
-## Status: ✅ IMPLEMENTERAD
-
-Alla fem förbättringar plus PDF-export har implementerats:
-1. ✅ **Interaktiva checklistor** - Klickbara items med progress-bar och expandera-funktion
-2. ✅ **AI kan läsa scheman** - Nytt `query_schedule`-verktyg för AI-assistenten
-3. ✅ **Redigerbara inställningar** - Admin-panel för att redigera arbetsregler, tider och kontakter
-4. ✅ **Notifikationssystem** - In-app notiser med realtime-uppdateringar
-5. ✅ **PDF-export av scheman** - Ladda ner rapport över vem som jobbat och när
+## Sammanfattning
+Lägger till en mikrofonknapp i ChatView som låter användare prata istället för att skriva. Talet konverteras till text med webbläsarens inbyggda Web Speech API (gratis, ingen API-nyckel behövs).
 
 ---
 
-## Del 1: Interaktiva Checklistor
+## Funktionalitet
 
-### Nuläge
-`ChecklistsView.tsx` visar checklistor som statiska kort utan möjlighet att bocka av items. Items lagras som JSON i `checklists.items`-kolumnen.
+### Användarupplevelse
+1. Mikrofonknapp visas bredvid skicka-knappen
+2. Användaren trycker på mikrofonen - den blir röd och "lyssnar"
+3. Användaren pratar på svenska
+4. Talet konverteras till text och visas i inputfältet
+5. Användaren kan redigera texten eller skicka direkt
+6. Alternativt: "Tryck och håll" för att prata, släpp för att skicka
 
-### Implementation
-
-**Frontend-ändringar (`ChecklistsView.tsx`):**
-- Lägg till klick-hantering på varje checklist-item
-- Skapa `toggleChecklistItem(checklistId, itemIndex)` funktion
-- Uppdatera lokal state omedelbart för snabb feedback
-- Skicka PUT-request till databasen för att uppdatera `items` JSONB
-- Visa progress-indikator (X av Y färdiga)
-- Lägg till "Expandera"-knapp för att se alla items (inte bara första 5)
-
-**Databaslogik:**
-- Inga schemaändringar krävs (items är redan JSONB)
-- RLS-policy tillåter redan uppdateringar för användare inom arbetsplatsen
+### Visuell feedback
+- Mikrofonikon (grå) = inaktiv
+- Mikrofonikon (röd + pulsande animation) = lyssnar
+- Tillfällig text "Lyssnar..." under inspelning
 
 ---
 
-## Del 2: AI Kan Läsa Scheman (`query_schedule`)
+## Teknisk Implementation
 
-### Nuläge
-Edge function `workbuddy-chat` har redan tillgång till scheman i sitt system-prompt (rad 611), men kan bara svara med det som laddades vid anropets start. Den kan inte söka dynamiskt.
-
-### Implementation
-
-**Nytt verktyg i `workbuddy-chat/index.ts`:**
+### Ny hook: `useSpeechRecognition`
+Skapar en återanvändbar hook som hanterar:
+- Initiering av `webkitSpeechRecognition` / `SpeechRecognition`
+- Start/stopp av inspelning
+- Språkinställning (svenska: `sv-SE`)
+- Felhantering (mikrofon nekad, ingen support)
+- Callback med transkriberad text
 
 ```text
-Verktyg: query_schedule
-Beskrivning: Sök och fråga om scheman för specifika datum, personer eller perioder
-Parametrar:
-  - start_date: YYYY-MM-DD (obligatorisk)
-  - end_date: YYYY-MM-DD (valfri, default = start_date)
-  - user_name: Filtrera på person (valfri)
-  - only_user: Om true, returnera endast pass för den autentiserade användaren
-
-Returnerar: Lista av pass med datum, tid, person, roll
+src/hooks/useSpeechRecognition.ts
+├── isListening: boolean
+├── isSupported: boolean
+├── startListening(): void
+├── stopListening(): void
+├── transcript: string
+└── error: string | null
 ```
 
-**Use cases som aktiveras:**
-- "Vem jobbar på fredag?"
-- "Vilka pass har jag nästa vecka?"
-- "Hur många timmar har Anna jobbat denna månad?"
-- "Visa schemat för vecka 6"
-
-**Kod-ändringar:**
-1. Lägg till verktyg-definition i `tools`-arrayen (rad 9)
-2. Lägg till `case "query_schedule":` i `executeToolCall` (rad 252)
-3. Implementera databasförfrågan med datumfilter
+### Uppdatering av ChatView
+- Importera `useSpeechRecognition` hook
+- Lägg till mikrofonknapp bredvid skicka-knappen
+- Visa visuell feedback när mikrofonen är aktiv
+- Populera input-fältet med transkriberad text
+- Valfritt: Auto-skicka efter en paus i talet
 
 ---
 
-## Del 3: Redigerbara Inställningar
+## Webbläsarstöd
 
-### Nuläge
-`SettingsView.tsx` är helt statisk och visar bara data. Admins kan inte ändra timlön, kontakter eller viktiga tider.
+| Webbläsare | Stöd |
+|------------|------|
+| Chrome | Ja |
+| Edge | Ja |
+| Safari | Ja (iOS 14.5+) |
+| Firefox | Nej (visar alternativ text) |
 
-### Implementation
+För webbläsare utan stöd visas inte mikrofonknappen, eller en tooltip förklarar att funktionen inte stöds.
 
-**Ny komponentstruktur:**
+---
 
+## Filer som skapas/uppdateras
+
+### Ny fil:
+- `src/hooks/useSpeechRecognition.ts` - Hook för taligenkänning
+
+### Uppdaterad fil:
+- `src/components/portal/views/ChatView.tsx` - Lägg till mikrofonknapp och integration
+
+---
+
+## Tekniska detaljer
+
+### Web Speech API-konfiguration
 ```text
-SettingsView.tsx
-├── EditableWorkplaceInfo (namn, typ, företag)
-├── EditableWorkRules (timlön, OB, max timmar, vilotid)
-├── EditableImportantTimes (CRUD för tider)
-└── EditableContacts (CRUD för kontakter)
+- lang: "sv-SE" (svenska)
+- continuous: false (stoppar efter en mening)
+- interimResults: true (visar text medan användaren pratar)
 ```
 
-**För varje sektion:**
-- "Redigera"-knapp som byter till formulärläge
-- Inline-redigering med Input/Select-komponenter
-- "Spara" och "Avbryt" knappar
-- Toast-meddelanden vid lyckad/misslyckad uppdatering
+### Felhantering
+- `not-allowed`: Användaren nekade mikrofontillgång
+- `no-speech`: Inget tal detekterades
+- `network`: Nätverksfel (krävs för Chrome)
+- Fallback-meddelande för webbläsare utan stöd
 
-**Databasoperationer:**
-- `workplaces.settings` (JSONB) - uppdatera arbetsregler
-- `important_times` - INSERT/UPDATE/DELETE
-- `contacts` - INSERT/UPDATE/DELETE
-
----
-
-## Del 4: Notifikationssystem
-
-### Databasschema
-
-**Ny tabell: `notifications`**
-```sql
-CREATE TABLE notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  workplace_id UUID REFERENCES workplaces(id) ON DELETE CASCADE,
-  type TEXT NOT NULL, -- 'announcement', 'dm', 'schedule_change', 'team_message'
-  title TEXT NOT NULL,
-  message TEXT,
-  link TEXT, -- Optional: deep link to relevant view
-  is_read BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- RLS: Användare kan bara se sina egna notiser
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own notifications" 
-  ON notifications FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update own notifications" 
-  ON notifications FOR UPDATE USING (auth.uid() = user_id);
-```
-
-**Triggers för automatiska notiser:**
-1. `AFTER INSERT ON announcements` → Skapa notis för alla på arbetsplatsen
-2. `AFTER INSERT ON direct_messages` → Skapa notis för mottagaren
-3. `AFTER UPDATE ON schedules` → Skapa notis för berörda personer
-
-**Frontend-komponenter:**
-
-```text
-src/components/portal/
-├── NotificationBell.tsx       -- Ikon med olästa-räknare
-├── NotificationDropdown.tsx   -- Lista över senaste notiser
-└── hooks/useNotifications.ts  -- Realtime-subscription + markera läst
-```
-
-**Integration:**
-- Lägg till `<NotificationBell />` i `PortalSidebar.tsx` och `MobileNav.tsx`
-- Realtime-subscription på `notifications` tabellen
-- Klick på notis → Markera som läst + navigera till relevant vy
-
----
-
-## Del 5: PDF-export av Scheman
-
-### Funktion
-En knapp i `ScheduleView.tsx` som genererar en PDF-rapport med alla pass för vald period.
-
-### Implementation
-
-**Ny Edge Function: `generate-schedule-pdf`**
-
-```text
-Input:
-  - workplace_id
-  - start_date
-  - end_date
-  - format: "summary" | "detailed"
-
-Output:
-  - PDF-fil (Content-Type: application/pdf)
-```
-
-**PDF-innehåll:**
-- Rubrik: "Arbetsrapport - [Arbetsplats] - [Period]"
-- Tabell med kolumner: Datum, Person, Tid, Roll, Timmar
-- Summering: Totalt antal timmar per person
-- Footer: Genererad datum
-
-**Teknisk approach:**
-1. Använd `jspdf` eller `pdfmake` via Deno-kompatibel version
-2. Alternativt: Generera HTML och konvertera till PDF server-side
-
-**Frontend:**
-- Ny knapp i `ScheduleView.tsx` header: "Ladda ner rapport"
-- Datumväljare för att välja rapportperiod (default: vald vecka/månad)
-- Anropa edge function och ladda ner blob som fil
-
----
-
-## Tekniska Detaljer
-
-### Filer som skapas:
-1. `src/components/portal/notifications/NotificationBell.tsx`
-2. `src/components/portal/notifications/NotificationDropdown.tsx`
-3. `src/hooks/useNotifications.ts`
-4. `supabase/functions/generate-schedule-pdf/index.ts`
-5. Databasmigration för `notifications`-tabellen
-
-### Filer som uppdateras:
-1. `src/components/portal/views/ChecklistsView.tsx` - Interaktivitet
-2. `supabase/functions/workbuddy-chat/index.ts` - query_schedule tool
-3. `src/components/portal/views/SettingsView.tsx` - Redigerbara fält
-4. `src/components/portal/views/ScheduleView.tsx` - PDF-export knapp
-5. `src/components/portal/PortalSidebar.tsx` - NotificationBell
-6. `src/components/portal/MobileNav.tsx` - NotificationBell
-7. `supabase/config.toml` - Registrera ny edge function
-
-### Prioritetsordning:
-1. Interaktiva checklistor (enklast, direkt värde)
-2. AI kan läsa scheman (hög efterfrågan)
-3. PDF-export (ny funktion användaren bad om)
-4. Redigerbara inställningar (admin-fokus)
-5. Notifikationssystem (mest komplext, störst påverkan)
-
-### Beroenden:
-- PDF-generering kräver ett bibliotek (jspdf eller pdfmake)
-- Notifikationssystem kräver databasändringar och triggers
-- Alla andra ändringar kan göras oberoende av varandra
+### Tillgänglighet
+- ARIA-labels för mikrofonknappen
+- Visuell och auditiv feedback
+- Keyboard-accessible (Enter för att starta/stoppa)
