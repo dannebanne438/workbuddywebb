@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { WorkplaceSelector } from "./WorkplaceSelector";
+import { NotificationBell } from "./notifications/NotificationBell";
 import {
   MessageSquare,
   Calendar,
@@ -224,7 +225,7 @@ export function MobileNav({ currentView, onViewChange, open, onOpenChange }: Mob
           <span className="font-medium text-foreground text-sm">{viewLabels[currentView]}</span>
         </div>
 
-        <div className="w-10" /> {/* Spacer for balance */}
+        <NotificationBell onNavigate={onViewChange} collapsed />
       </header>
     </>
   );

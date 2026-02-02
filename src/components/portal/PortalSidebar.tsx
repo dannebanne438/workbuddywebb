@@ -4,6 +4,7 @@ import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { WorkplaceSelector } from "./WorkplaceSelector";
+import { NotificationBell } from "./notifications/NotificationBell";
 import {
   MessageSquare,
   Calendar,
@@ -173,6 +174,16 @@ export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSide
 
       {/* User Info */}
       <div className="p-4 border-t border-border">
+        {!collapsed && (
+          <div className="mb-3">
+            <NotificationBell onNavigate={onViewChange} collapsed={collapsed} />
+          </div>
+        )}
+        {collapsed && (
+          <div className="mb-2">
+            <NotificationBell onNavigate={onViewChange} collapsed={collapsed} />
+          </div>
+        )}
         {!collapsed && profile && (
           <div className="mb-3">
             <p className="font-medium text-foreground truncate text-sm">{profile.full_name || profile.email}</p>
