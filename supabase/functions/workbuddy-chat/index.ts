@@ -7,6 +7,24 @@ const corsHeaders = {
 };
 
 const tools = [
+  // Query schedule tool
+  {
+    type: "function",
+    function: {
+      name: "query_schedule",
+      description: "Search and query schedules for specific dates, people, or periods. Use this when user asks about who is working, available shifts, or hours worked.",
+      parameters: {
+        type: "object",
+        properties: {
+          start_date: { type: "string", description: "Start date in YYYY-MM-DD format" },
+          end_date: { type: "string", description: "End date in YYYY-MM-DD format (optional, defaults to start_date)" },
+          user_name: { type: "string", description: "Filter by person name (optional)" },
+          only_current_user: { type: "boolean", description: "If true, only return shifts for the authenticated user" }
+        },
+        required: ["start_date"]
+      }
+    }
+  },
   // Schedule tools
   {
     type: "function",
@@ -250,6 +268,48 @@ async function executeToolCall(
 ): Promise<{ success: boolean; message: string; data?: any }> {
   
   switch (toolName) {
+    // QUERY SCHEDULE (read-only, available to all users)
+    case "query_schedule": {
+      let query = supabaseAdmin
+        .from("schedules")
+        .select("shift_date, start_time, end_time, user_name, role, notes, is_approved")
+        .eq("workplace_id", workplaceId)
+        .gte("shift_date", args.start_date)
+        .order("shift_date")
+        .order("start_time");
+
+      const endDate = args.end_date || args.start_date;
+      query = query.lte("shift_date", endDate);
+
+      if (args.user_name) {
+        query = query.ilike("user_name", `%${args.user_name}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) return { success: false, message: error.message };
+
+      // Calculate total hours
+      const totalHours = (data || []).reduce((sum: number, shift: { start_time: string; end_time: string }) => {
+        const [startH, startM] = shift.start_time.split(":").map(Number);
+        const [endH, endM] = shift.end_time.split(":").map(Number);
+        let hours = endH - startH + (endM - startM) / 60;
+        if (hours < 0) hours += 24;
+        return sum + hours;
+      }, 0);
+
+      return {
+        success: true,
+        message: `Hittade ${data?.length || 0} pass (totalt ${totalHours.toFixed(1)} timmar)`,
+        data: {
+          action: "query_schedule",
+          shifts: data || [],
+          total_shifts: data?.length || 0,
+          total_hours: totalHours
+        }
+      };
+    }
+
     // SCHEDULE OPERATIONS
     case "create_schedule": {
       const shiftsToInsert = args.shifts.map((shift: any) => ({

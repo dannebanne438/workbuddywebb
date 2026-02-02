@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutGrid } from "lucide-react";
+import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutGrid, Download } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isToday, addDays, subDays } from "date-fns";
 import { sv } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 interface Schedule {
   id: string;
   shift_date: string;
@@ -24,12 +27,17 @@ type ViewMode = "month" | "week";
 
 export function ScheduleView() {
   const { activeWorkplace } = useWorkplace();
+  const { session } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState<string>(format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"));
+  const [exportEndDate, setExportEndDate] = useState<string>(format(endOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"));
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -121,6 +129,56 @@ export function ScheduleView() {
     setSelectedDate(addDays(selectedDate, 1));
   };
 
+  const handleExportPdf = async () => {
+    if (!activeWorkplace?.id || !session?.access_token) {
+      toast.error("Kunde inte generera rapport");
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-schedule-pdf`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            workplace_id: activeWorkplace.id,
+            start_date: exportStartDate,
+            end_date: exportEndDate,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const html = await response.text();
+      
+      // Open in new window for printing
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+
+      setShowExportDialog(false);
+      toast.success("Rapport öppnad i nytt fönster");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Kunde inte generera rapporten");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
       <header className="px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card">
@@ -137,26 +195,82 @@ export function ScheduleView() {
             </div>
           </div>
           
-          {/* View toggle */}
-          <div className="flex gap-1 bg-secondary rounded-lg p-1 shrink-0">
-            <Button
-              variant={viewMode === "week" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("week")}
-              className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
-            >
-              <CalendarDays className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">Vecka</span>
-            </Button>
-            <Button
-              variant={viewMode === "month" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("month")}
-              className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
-            >
-              <LayoutGrid className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              <span className="hidden sm:inline">Månad</span>
-            </Button>
+          <div className="flex items-center gap-2">
+            {/* Export button */}
+            <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm">
+                  <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Rapport</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Ladda ner arbetsrapport</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Från</label>
+                      <input
+                        type="date"
+                        value={exportStartDate}
+                        onChange={(e) => setExportStartDate(e.target.value)}
+                        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Till</label>
+                      <input
+                        type="date"
+                        value={exportEndDate}
+                        onChange={(e) => setExportEndDate(e.target.value)}
+                        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleExportPdf}
+                    disabled={exportLoading}
+                    className="w-full"
+                  >
+                    {exportLoading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Genererar...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        Ladda ner rapport
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* View toggle */}
+            <div className="flex gap-1 bg-secondary rounded-lg p-1 shrink-0">
+              <Button
+                variant={viewMode === "week" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("week")}
+                className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
+              >
+                <CalendarDays className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Vecka</span>
+              </Button>
+              <Button
+                variant={viewMode === "month" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("month")}
+                className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
+              >
+                <LayoutGrid className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Månad</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
