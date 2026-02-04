@@ -501,6 +501,63 @@ export type Database = {
           },
         ]
       }
+      prospect_leads: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string
+          contacts: Json | null
+          created_at: string
+          created_by: string | null
+          estimated_employees: number | null
+          id: string
+          industry: string | null
+          lead_score: number | null
+          notes: string | null
+          relevance_notes: string | null
+          search_area: string | null
+          search_coordinates: Json | null
+          search_radius_km: number | null
+          status: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name: string
+          contacts?: Json | null
+          created_at?: string
+          created_by?: string | null
+          estimated_employees?: number | null
+          id?: string
+          industry?: string | null
+          lead_score?: number | null
+          notes?: string | null
+          relevance_notes?: string | null
+          search_area?: string | null
+          search_coordinates?: Json | null
+          search_radius_km?: number | null
+          status?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string
+          contacts?: Json | null
+          created_at?: string
+          created_by?: string | null
+          estimated_employees?: number | null
+          id?: string
+          industry?: string | null
+          lead_score?: number | null
+          notes?: string | null
+          relevance_notes?: string | null
+          search_area?: string | null
+          search_coordinates?: Json | null
+          search_radius_km?: number | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       routines: {
         Row: {
           category: string | null
