@@ -77,46 +77,51 @@ serve(async (req) => {
 
     const industryList = industries.join(", ");
     
-    const systemPrompt = `Du är en affärsanalytiker som hjälper WorkBuddy att identifiera potentiella företagskunder.
+    const systemPrompt = `Du är en affärsanalytiker specialiserad på svenska företag som hjälper WorkBuddy att hitta potentiella kunder.
 
-VIKTIGA REGLER:
-1. Identifiera ENDAST verkliga, verifierbara företag som du känner till
-2. Om du inte är säker på ett företag - inkludera det INTE
-3. Returnera ALLTID null för fält du inte har tillförlitlig information om
-4. Kvalitet före kvantitet - 3 bra leads är bättre än 10 osäkra
-5. Fokusera på företag som passar WorkBuddy:
-   - Skiftarbete eller distribuerad personal
-   - Flera arbetsplatser/avdelningar
-   - 10+ anställda
-   - Behov av schemaläggning och kommunikation
+WorkBuddy är en personalapp för skiftbaserade verksamheter - schemaläggning, kommunikation och checklistor.
 
-PRIORITERADE BRANSCHER (i ordning):
-1. Säkerhet (väktarbolag, bevakning)
-2. Event (cateringföretag, eventbolag)
-3. Bemanning (bemanningsföretag, rekrytering)
-4. Hotell/Restaurang (hotell, restauranger, caféer)
-5. Gym/Fitness (träningsanläggningar)
+DITT UPPDRAG:
+Generera 8-15 relevanta företag inom det angivna området. Var generös - hellre inkludera företag som KAN vara relevanta.
 
-KONTAKTROLLER att identifiera (i prioriterad ordning):
-- VD, CEO
-- COO, Driftchef
-- HR-chef, Personalansvarig
-- Platschef, Områdeschef
+MÅLGRUPP (företag som passar WorkBuddy):
+- Skiftarbete eller timavlönad personal
+- Operativ verksamhet med flera medarbetare
+- Behov av schemaläggning, intern kommunikation
+- Typiskt 5-500 anställda
 
-Du MÅSTE använda funktionen return_prospect_leads för att returnera resultaten.`;
+BRANSCHER ATT FOKUSERA PÅ:
+1. Säkerhet - väktarbolag, bevakning, larmcentraler
+2. Event - catering, eventföretag, mässor, konferenser  
+3. Bemanning - bemanningsföretag, rekrytering, konsultbolag
+4. Hotell/Restaurang - hotell, restauranger, caféer, barer, nattklubbar
+5. Gym/Fitness - gym, träningsanläggningar, simhallar, sportklubbar
+6. Vård/Omsorg - vårdbolag, hemtjänst, äldreomsorg
+7. Städ/Fastighet - städföretag, fastighetsservice
+8. Butik/Retail - butikskedjor med flera enheter
 
-    const userPrompt = `Identifiera företag inom ${radiusKm} km från ${city} (koordinater: ${coordinates.lat}, ${coordinates.lng}) inom följande branscher: ${industryList}.
+KONTAKTROLLER (prioritetsordning):
+VD, Driftchef/COO, HR-ansvarig, Platschef, Personalchef
 
-Returnera endast företag du är säker på existerar. För varje företag, inkludera:
-- Företagsnamn (obligatoriskt)
+REGLER:
+- Generera minst 8 företag om möjligt
+- Blanda kända kedjor/bolag med lokala företag
+- Om du inte vet exakt adress, ange stadsnamnet
+- Lead-score 60-90 för de flesta relevanta företag
+- Du MÅSTE använda funktionen return_prospect_leads`;
+
+    const userPrompt = `Hitta 8-15 företag inom ${radiusKm} km från ${city} i dessa branscher: ${industryList}.
+
+Inkludera:
+- Företagsnamn (OBLIGATORISKT)
 - Bransch
-- Adress (om känd)
-- Uppskattat antal anställda
-- Kontaktpersoner (namn, roll, kontaktuppgifter om tillgängliga)
-- En kort notering om varför de är relevanta för WorkBuddy
-- Lead-poäng 0-100 baserat på relevans
+- Adress eller stad
+- Ca antal anställda (uppskatta om okänt)
+- Minst EN kontaktroll (VD/Driftchef/HR) - namn om känt, annars bara rollen
+- Varför de passar WorkBuddy (1 mening)
+- Lead-poäng 60-90
 
-VIKTIGT: Returnera null för fält du inte är säker på. Fabricera ALDRIG data.`;
+Ge mig MINST 8 företag. Blanda nationella kedjor som har verksamhet i ${city} med lokala företag.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

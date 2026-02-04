@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Check, X, Building, Users, Mail, Clock, MapPin } from "lucide-react";
+import { Shield, Check, X, Building, Users, Mail, Clock, MapPin, BookMarked } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { MapLeadFinder } from "./MapLeadFinder";
+import { SavedLeadsView } from "./SavedLeadsView";
 
-type TabType = "overview" | "prospecting";
+type TabType = "overview" | "prospecting" | "saved-leads";
 
 interface AdminRequest {
   id: string;
@@ -180,12 +181,22 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
               <MapPin className="h-4 w-4 mr-2" />
               Prospektering
             </Button>
+            <Button
+              variant={activeTab === "saved-leads" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("saved-leads")}
+            >
+              <BookMarked className="h-4 w-4 mr-2" />
+              Sparade Leads
+            </Button>
           </div>
         </div>
       </header>
 
       {activeTab === "prospecting" ? (
         <MapLeadFinder />
+      ) : activeTab === "saved-leads" ? (
+        <SavedLeadsView />
       ) : (
         <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
