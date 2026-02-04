@@ -1,96 +1,126 @@
 
-# Röstinmatning för WorkBuddy
+
+# Säkerhetsfix för WorkBuddy
 
 ## Sammanfattning
-Lägger till en mikrofonknapp i ChatView som låter användare prata istället för att skriva. Talet konverteras till text med webbläsarens inbyggda Web Speech API (gratis, ingen API-nyckel behövs).
+Vi kommer att skydda känslig data i `workplaces` och `invite_codes`-tabellerna genom att ersätta de öppna RLS-policyerna med säkra verifieringsfunktioner. Login-flödet fortsätter fungera - men utan att exponera all data publikt.
 
----
+## Vad som fixas
 
-## Funktionalitet
+| Problem | Nuvarande risk | Lösning |
+|---------|---------------|---------|
+| **Arbetsplatser publikt läsbara** | Konkurrenter kan se alla företagsnamn, priser och inställningar | Endast verifiera platskod - inte läsa all data |
+| **Inbjudningskoder publikt läsbara** | Vem som helst kan lista alla aktiva koder | Endast verifiera enskild kod |
+| **Läckt lösenordsskydd av** | Användare kan välja komprometterade lösenord | Aktivera HaveIBeenPwned-kontroll |
 
-### Användarupplevelse
-1. Mikrofonknapp visas bredvid skicka-knappen
-2. Användaren trycker på mikrofonen - den blir röd och "lyssnar"
-3. Användaren pratar på svenska
-4. Talet konverteras till text och visas i inputfältet
-5. Användaren kan redigera texten eller skicka direkt
-6. Alternativt: "Tryck och håll" för att prata, släpp för att skicka
+## Implementationsplan
 
-### Visuell feedback
-- Mikrofonikon (grå) = inaktiv
-- Mikrofonikon (röd + pulsande animation) = lyssnar
-- Tillfällig text "Lyssnar..." under inspelning
+### Steg 1: Skapa säkra verifieringsfunktioner
 
----
+Två nya databasfunktioner som returnerar **endast nödvändig data**:
 
-## Teknisk Implementation
+**`verify_workplace_code(code)`**
+- Input: platskod (t.ex. "WBPRIX8")
+- Output: `{id, name, company_name}` eller `null`
+- Körs som `SECURITY DEFINER` - bypasses RLS säkert
 
-### Ny hook: `useSpeechRecognition`
-Skapar en återanvändbar hook som hanterar:
-- Initiering av `webkitSpeechRecognition` / `SpeechRecognition`
-- Start/stopp av inspelning
-- Språkinställning (svenska: `sv-SE`)
-- Felhantering (mikrofon nekad, ingen support)
-- Callback med transkriberad text
+**`verify_invite_code(code)`**
+- Input: inbjudningskod
+- Output: `{workplace_id, name}` eller `null`
+- Ökar `uses_count` automatiskt vid lyckad verifiering
+
+### Steg 2: Uppdatera RLS-policyer
+
+**Workplaces-tabellen:**
+- ❌ Ta bort: "Anyone can verify workplace codes" (`USING (true)`)
+- ✅ Lägg till: Endast inloggade användare kan se sin egen arbetsplats
+- ✅ Lägg till: Super admin kan se alla
+
+**Invite_codes-tabellen:**
+- ❌ Ta bort: "Anyone can verify invite codes" (`USING (true)`)
+- ✅ Behåll: Workplace admin kan hantera koder (redan finns)
+
+### Steg 3: Uppdatera Login-komponenten
+
+Ändra från direkta databasanrop till att använda de nya säkra funktionerna:
 
 ```text
-src/hooks/useSpeechRecognition.ts
-├── isListening: boolean
-├── isSupported: boolean
-├── startListening(): void
-├── stopListening(): void
-├── transcript: string
-└── error: string | null
+Före: supabase.from("workplaces").select("*").eq("workplace_code", code)
+Efter: supabase.rpc("verify_workplace_code", { code })
 ```
 
-### Uppdatering av ChatView
-- Importera `useSpeechRecognition` hook
-- Lägg till mikrofonknapp bredvid skicka-knappen
-- Visa visuell feedback när mikrofonen är aktiv
-- Populera input-fältet med transkriberad text
-- Valfritt: Auto-skicka efter en paus i talet
+### Steg 4: Aktivera läckt lösenordsskydd
+
+Aktivera HaveIBeenPwned-integrationen så att användare varnas om de försöker använda ett komprometterat lösenord.
 
 ---
 
-## Webbläsarstöd
+## Teknisk detalj
 
-| Webbläsare | Stöd |
-|------------|------|
-| Chrome | Ja |
-| Edge | Ja |
-| Safari | Ja (iOS 14.5+) |
-| Firefox | Nej (visar alternativ text) |
+### Databasmigration
 
-För webbläsare utan stöd visas inte mikrofonknappen, eller en tooltip förklarar att funktionen inte stöds.
+```sql
+-- Säker verifieringsfunktion för arbetsplatskoder
+CREATE OR REPLACE FUNCTION public.verify_workplace_code(_code text)
+RETURNS TABLE(id uuid, name text, company_name text)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT w.id, w.name, w.company_name
+  FROM public.workplaces w
+  WHERE UPPER(w.workplace_code) = UPPER(_code)
+  LIMIT 1
+$$;
 
----
+-- Säker verifieringsfunktion för inbjudningskoder
+CREATE OR REPLACE FUNCTION public.verify_invite_code(_code text)
+RETURNS TABLE(workplace_id uuid, name text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT ic.workplace_id, ic.name
+  FROM public.invite_codes ic
+  WHERE ic.code = _code AND ic.status = 'active'
+  LIMIT 1;
+  
+  -- Öka användningsräknaren om koden hittades
+  IF FOUND THEN
+    UPDATE public.invite_codes SET uses_count = uses_count + 1 WHERE code = _code;
+  END IF;
+END;
+$$;
 
-## Filer som skapas/uppdateras
+-- Ta bort osäkra policyer
+DROP POLICY IF EXISTS "Anyone can verify workplace codes" ON public.workplaces;
+DROP POLICY IF EXISTS "Anyone can verify invite codes" ON public.invite_codes;
 
-### Ny fil:
-- `src/hooks/useSpeechRecognition.ts` - Hook för taligenkänning
+-- Nya säkra policyer för workplaces
+CREATE POLICY "Users can view own workplace"
+  ON public.workplaces FOR SELECT
+  USING (id = get_user_workplace_id(auth.uid()) OR is_super_admin(auth.uid()));
 
-### Uppdaterad fil:
-- `src/components/portal/views/ChatView.tsx` - Lägg till mikrofonknapp och integration
-
----
-
-## Tekniska detaljer
-
-### Web Speech API-konfiguration
-```text
-- lang: "sv-SE" (svenska)
-- continuous: false (stoppar efter en mening)
-- interimResults: true (visar text medan användaren pratar)
+-- Invite codes behåller admin-policyn (redan korrekt)
 ```
 
-### Felhantering
-- `not-allowed`: Användaren nekade mikrofontillgång
-- `no-speech`: Inget tal detekterades
-- `network`: Nätverksfel (krävs för Chrome)
-- Fallback-meddelande för webbläsare utan stöd
+### Filer som uppdateras
 
-### Tillgänglighet
-- ARIA-labels för mikrofonknappen
-- Visuell och auditiv feedback
-- Keyboard-accessible (Enter för att starta/stoppa)
+| Fil | Ändring |
+|-----|---------|
+| `src/pages/Login.tsx` | Använd `rpc("verify_workplace_code")` istället för direkt SELECT |
+| Databasmigration | Skapa funktioner + uppdatera RLS-policyer |
+
+---
+
+## Resultat efter implementation
+
+✅ Obehöriga kan **inte** lista alla arbetsplatser eller inbjudningskoder  
+✅ Login-flödet fungerar som tidigare (via säkra funktioner)  
+✅ Inloggade användare ser endast sin egen arbetsplats  
+✅ Admins behåller full hantering av koder  
+✅ Komprometterade lösenord blockeras  
+
