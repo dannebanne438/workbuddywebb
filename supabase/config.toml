@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.workbuddy-chat]
 verify_jwt = false
+
+[functions.prospect-search]
+verify_jwt = true

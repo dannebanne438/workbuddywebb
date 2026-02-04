@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Check, X, Building, Users, Mail, Clock } from "lucide-react";
+import { Shield, Check, X, Building, Users, Mail, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { MapLeadFinder } from "./MapLeadFinder";
+
+type TabType = "overview" | "prospecting";
 
 interface AdminRequest {
   id: string;
@@ -45,6 +48,7 @@ interface SuperAdminViewProps {
 export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
   const { isSuperAdmin, user } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [leads, setLeads] = useState<ContactLead[]>([]);
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
@@ -147,18 +151,43 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
   return (
     <div className="h-full flex flex-col bg-background">
       <header className="px-6 py-4 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl wb-gradient-accent flex items-center justify-center">
-            <Shield className="h-5 w-5 text-primary-foreground" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl wb-gradient-accent flex items-center justify-center">
+              <Shield className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-foreground">Super Admin</h1>
+              <p className="text-sm text-muted-foreground">Global administration</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-semibold text-foreground">Super Admin</h1>
-            <p className="text-sm text-muted-foreground">Global administration</p>
+          
+          {/* Tab navigation */}
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === "overview" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("overview")}
+            >
+              <Building className="h-4 w-4 mr-2" />
+              Översikt
+            </Button>
+            <Button
+              variant={activeTab === "prospecting" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("prospecting")}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Prospektering
+            </Button>
           </div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      {activeTab === "prospecting" ? (
+        <MapLeadFinder />
+      ) : (
+        <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -301,7 +330,8 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
