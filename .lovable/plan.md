@@ -1,126 +1,255 @@
 
 
-# Säkerhetsfix för WorkBuddy
+# Kartbaserad Företagsinhämtning för WorkBuddy HQ
 
 ## Sammanfattning
-Vi kommer att skydda känslig data i `workplaces` och `invite_codes`-tabellerna genom att ersätta de öppna RLS-policyerna med säkra verifieringsfunktioner. Login-flödet fortsätter fungera - men utan att exponera all data publikt.
 
-## Vad som fixas
+Ett nytt verktyg i Super Admin-vyn som låter dig välja ett geografiskt område på en interaktiv karta och sedan använda AI för att identifiera och prioritera relevanta företagskontakter för WorkBuddy-försäljning.
 
-| Problem | Nuvarande risk | Lösning |
-|---------|---------------|---------|
-| **Arbetsplatser publikt läsbara** | Konkurrenter kan se alla företagsnamn, priser och inställningar | Endast verifiera platskod - inte läsa all data |
-| **Inbjudningskoder publikt läsbara** | Vem som helst kan lista alla aktiva koder | Endast verifiera enskild kod |
-| **Läckt lösenordsskydd av** | Användare kan välja komprometterade lösenord | Aktivera HaveIBeenPwned-kontroll |
-
-## Implementationsplan
-
-### Steg 1: Skapa säkra verifieringsfunktioner
-
-Två nya databasfunktioner som returnerar **endast nödvändig data**:
-
-**`verify_workplace_code(code)`**
-- Input: platskod (t.ex. "WBPRIX8")
-- Output: `{id, name, company_name}` eller `null`
-- Körs som `SECURITY DEFINER` - bypasses RLS säkert
-
-**`verify_invite_code(code)`**
-- Input: inbjudningskod
-- Output: `{workplace_id, name}` eller `null`
-- Ökar `uses_count` automatiskt vid lyckad verifiering
-
-### Steg 2: Uppdatera RLS-policyer
-
-**Workplaces-tabellen:**
-- ❌ Ta bort: "Anyone can verify workplace codes" (`USING (true)`)
-- ✅ Lägg till: Endast inloggade användare kan se sin egen arbetsplats
-- ✅ Lägg till: Super admin kan se alla
-
-**Invite_codes-tabellen:**
-- ❌ Ta bort: "Anyone can verify invite codes" (`USING (true)`)
-- ✅ Behåll: Workplace admin kan hantera koder (redan finns)
-
-### Steg 3: Uppdatera Login-komponenten
-
-Ändra från direkta databasanrop till att använda de nya säkra funktionerna:
+## Hur det fungerar
 
 ```text
-Före: supabase.from("workplaces").select("*").eq("workplace_code", code)
-Efter: supabase.rpc("verify_workplace_code", { code })
+┌─────────────────────────────────────────────────────────────┐
+│                    WORKBUDDY HQ                             │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                 INTERAKTIV KARTA                       │  │
+│  │     ┌──────────────────┐                               │  │
+│  │     │   Stockholm      │  ← Sök efter stad/område      │  │
+│  │     └──────────────────┘                               │  │
+│  │                                                        │  │
+│  │         ╭─────────────────╮                            │  │
+│  │         │    VALT         │  ← Rita cirkel på kartan   │  │
+│  │         │    OMRÅDE       │    (radie i km)            │  │
+│  │         │    2.5 km       │                            │  │
+│  │         ╰─────────────────╯                            │  │
+│  │                                                        │  │
+│  │  [Säkerhet ✓] [Event ✓] [Bemanning ✓] [Hotell ✓]      │  │
+│  │                                                        │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│               [ Sök Företag i Området ]                      │
+│                         ↓                                    │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  AI ANALYSERAR OCH RETURNERAR:                        │  │
+│  │                                                        │  │
+│  │  ┌────────────────────────────────────────────────┐   │  │
+│  │  │ SecureGuard AB                    Lead: 87/100 │   │  │
+│  │  │ Bransch: Säkerhet | Storlek: 45 anställda      │   │  │
+│  │  │ Kontakt: Anna Lindberg (Driftchef)             │   │  │
+│  │  │ E-post: anna@secureguard.se                    │   │  │
+│  │  │ Relevans: Skiftarbete, 3 kontor                │   │  │
+│  │  └────────────────────────────────────────────────┘   │  │
+│  │                                                        │  │
+│  │  [Spara som Lead]  [Exportera Lista]                  │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Steg 4: Aktivera läckt lösenordsskydd
+## Vad som byggs
 
-Aktivera HaveIBeenPwned-integrationen så att användare varnas om de försöker använda ett komprometterat lösenord.
+| Komponent | Beskrivning |
+|-----------|-------------|
+| **Interaktiv karta** | React Leaflet med OpenStreetMap (gratis, ingen API-nyckel) |
+| **Områdesväljare** | Sök stad + ange radie i km |
+| **Branschfilter** | Förvalda kategorier: Säkerhet, Event, Bemanning, Hotell/Restaurang, Gym |
+| **AI-sökfunktion** | Edge function som använder Lovable AI för att identifiera företag |
+| **Lead-tabell** | Ny databastabell för att lagra genererade leads med poängsättning |
+| **Export** | Spara leads till databasen för uppföljning |
+
+## Begränsningar (som specificerats)
+
+- Ingen data fabriceras - AI instrueras att returnera `null` vid osäkerhet
+- Kvalitet prioriteras före kvantitet
+- Endast Super Admin har tillgång
 
 ---
 
-## Teknisk detalj
+## Teknisk implementation
 
-### Databasmigration
+### Steg 1: Ny databastabell för prospekt-leads
+
+En ny tabell `prospect_leads` skapas för att lagra AI-genererade företagskontakter separat från inkommande kontaktförfrågningar:
 
 ```sql
--- Säker verifieringsfunktion för arbetsplatskoder
-CREATE OR REPLACE FUNCTION public.verify_workplace_code(_code text)
-RETURNS TABLE(id uuid, name text, company_name text)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT w.id, w.name, w.company_name
-  FROM public.workplaces w
-  WHERE UPPER(w.workplace_code) = UPPER(_code)
-  LIMIT 1
-$$;
-
--- Säker verifieringsfunktion för inbjudningskoder
-CREATE OR REPLACE FUNCTION public.verify_invite_code(_code text)
-RETURNS TABLE(workplace_id uuid, name text)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT ic.workplace_id, ic.name
-  FROM public.invite_codes ic
-  WHERE ic.code = _code AND ic.status = 'active'
-  LIMIT 1;
+CREATE TABLE public.prospect_leads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  created_by UUID REFERENCES auth.users(id),
   
-  -- Öka användningsräknaren om koden hittades
-  IF FOUND THEN
-    UPDATE public.invite_codes SET uses_count = uses_count + 1 WHERE code = _code;
-  END IF;
-END;
-$$;
+  -- Företagsinfo
+  company_name TEXT NOT NULL,
+  industry TEXT,
+  address TEXT,
+  city TEXT,
+  
+  -- Storlek och relevans
+  estimated_employees INTEGER,
+  relevance_notes TEXT,
+  lead_score INTEGER CHECK (lead_score >= 0 AND lead_score <= 100),
+  
+  -- Kontaktpersoner (JSON-array)
+  contacts JSONB DEFAULT '[]',
+  
+  -- Sökparametrar
+  search_area TEXT,
+  search_coordinates JSONB,
+  search_radius_km NUMERIC,
+  
+  -- Status
+  status TEXT DEFAULT 'new',
+  notes TEXT
+);
 
--- Ta bort osäkra policyer
-DROP POLICY IF EXISTS "Anyone can verify workplace codes" ON public.workplaces;
-DROP POLICY IF EXISTS "Anyone can verify invite codes" ON public.invite_codes;
+-- RLS: Endast super admins
+ALTER TABLE public.prospect_leads ENABLE ROW LEVEL SECURITY;
 
--- Nya säkra policyer för workplaces
-CREATE POLICY "Users can view own workplace"
-  ON public.workplaces FOR SELECT
-  USING (id = get_user_workplace_id(auth.uid()) OR is_super_admin(auth.uid()));
-
--- Invite codes behåller admin-policyn (redan korrekt)
+CREATE POLICY "Super admins can manage prospect leads"
+  ON public.prospect_leads FOR ALL
+  USING (is_super_admin(auth.uid()));
 ```
 
-### Filer som uppdateras
+### Steg 2: Edge Function för AI-sökning
+
+Ny edge function `prospect-search` som:
+1. Tar emot koordinater, radie och branschfilter
+2. Använder Lovable AI (Gemini) med strukturerad output
+3. Returnerar matchande företag med lead-poäng
+
+```typescript
+// supabase/functions/prospect-search/index.ts
+
+// Systempromp som instruerar AI att:
+// - Endast returnera verifierbara företag
+// - Prioritera skiftarbete, flera arbetsplatser, 10+ anställda
+// - Fokusera på: Säkerhet, Event, Bemanning, Hotell, Gym
+// - Returnera null för osäkra fält
+
+// Tool-call schema för strukturerad output:
+{
+  name: "return_prospect_leads",
+  parameters: {
+    prospects: [{
+      company_name: string,
+      industry: string | null,
+      address: string | null,
+      city: string | null,
+      estimated_employees: number | null,
+      contacts: [{
+        name: string | null,
+        role: string | null,
+        email: string | null,
+        phone: string | null,
+        linkedin: string | null
+      }],
+      relevance_notes: string,
+      lead_score: number
+    }]
+  }
+}
+```
+
+### Steg 3: UI-komponent för Super Admin
+
+Ny flik "Prospektering" i Super Admin-vyn med:
+
+**MapLeadFinder.tsx:**
+- React Leaflet-karta centrerad på Sverige
+- Sökfält för stad/område (Nominatim geocoding)
+- Slider för radie (1-10 km)
+- Checkbox-filter för branscher
+- "Sök"-knapp som triggar AI-analys
+- Resultatvisning med lead-kort
+- Spara-funktion till `prospect_leads`
+
+### Steg 4: Filer som skapas/ändras
 
 | Fil | Ändring |
 |-----|---------|
-| `src/pages/Login.tsx` | Använd `rpc("verify_workplace_code")` istället för direkt SELECT |
-| Databasmigration | Skapa funktioner + uppdatera RLS-policyer |
+| `supabase/functions/prospect-search/index.ts` | Ny edge function för AI-sökning |
+| `src/components/portal/views/MapLeadFinder.tsx` | Ny kartkomponent |
+| `src/components/portal/views/SuperAdminView.tsx` | Lägg till flik för prospektering |
+| `package.json` | Lägg till `react-leaflet`, `leaflet` |
+
+### Steg 5: Beroenden
+
+```json
+{
+  "leaflet": "^1.9.4",
+  "react-leaflet": "^4.2.1",
+  "@types/leaflet": "^1.9.8"
+}
+```
 
 ---
 
-## Resultat efter implementation
+## Dataflöde
 
-✅ Obehöriga kan **inte** lista alla arbetsplatser eller inbjudningskoder  
-✅ Login-flödet fungerar som tidigare (via säkra funktioner)  
-✅ Inloggade användare ser endast sin egen arbetsplats  
-✅ Admins behåller full hantering av koder  
-✅ Komprometterade lösenord blockeras  
+```text
+1. Super Admin öppnar "Prospektering"-fliken
+2. Väljer område på kartan (stad + radie)
+3. Väljer branschfilter (Säkerhet, Event, etc.)
+4. Klickar "Sök Företag"
+           │
+           ▼
+5. Frontend anropar /functions/v1/prospect-search
+           │
+           ▼
+6. Edge function bygger prompt:
+   "Identifiera företag inom [stad], [radie] km,
+    inom branscherna [filter], som har skiftarbete,
+    10+ anställda, eller flera arbetsplatser..."
+           │
+           ▼
+7. Lovable AI (Gemini) returnerar strukturerade leads
+           │
+           ▼
+8. Frontend visar resultaten som kort med:
+   - Företagsnamn, bransch, storlek
+   - Kontaktpersoner (om tillgängliga)
+   - Lead-poäng (0-100)
+   - Relevansnotering
+           │
+           ▼
+9. Super Admin kan spara leads till databasen
+```
+
+## Output-format
+
+Varje genererat lead innehåller:
+
+```json
+{
+  "company_name": "SecureGuard AB",
+  "industry": "Säkerhet",
+  "address": "Storgatan 15",
+  "city": "Stockholm",
+  "estimated_employees": 45,
+  "contacts": [
+    {
+      "name": "Anna Lindberg",
+      "role": "Driftchef",
+      "email": "anna@secureguard.se",
+      "phone": null,
+      "linkedin": null
+    }
+  ],
+  "relevance_notes": "Skiftarbete dygnet runt, 3 kontor i Stockholmsområdet",
+  "lead_score": 87
+}
+```
+
+---
+
+## Säkerhet
+
+- **Endast Super Admin**: RLS-policy begränsar åtkomst till `prospect_leads`-tabellen
+- **Ingen känslig data exponeras**: Funktionen körs endast på backend
+- **Rate limiting**: Edge function har inbyggd rate limiting via Lovable AI
+
+## Begränsningar att kommunicera
+
+AI-modellen har begränsad realtidskunskap om specifika företag. För bästa resultat:
+- Större städer ger fler och mer korrekta resultat
+- Kända branschkedjor identifieras bättre
+- Kontaktpersoner kan saknas för mindre företag
 
