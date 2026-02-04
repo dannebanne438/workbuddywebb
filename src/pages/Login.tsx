@@ -116,13 +116,23 @@ const Login = () => {
     
     setIsLoading(true);
     try {
+      // Use secure RPC function instead of direct table access
       const { data, error } = await supabase
-        .from("workplaces")
-        .select("id, name, company_name")
-        .eq("workplace_code", workplaceCode.toUpperCase())
-        .maybeSingle();
+        .rpc("verify_workplace_code", { _code: workplaceCode.toUpperCase() });
 
-      if (error || !data) {
+      if (error) {
+        setErrors((prev) => ({
+          ...prev,
+          workplaceCode: "Ett fel uppstod. Försök igen.",
+        }));
+        setIsLoading(false);
+        return;
+      }
+
+      // RPC returns an array, get first result
+      const workplace = Array.isArray(data) ? data[0] : data;
+      
+      if (!workplace) {
         setErrors((prev) => ({
           ...prev,
           workplaceCode: "Ogiltig platskod. Kontrollera koden och försök igen.",
@@ -131,8 +141,8 @@ const Login = () => {
         return;
       }
 
-      setWorkplaceId(data.id);
-      setWorkplaceName(`${data.name} (${data.company_name})`);
+      setWorkplaceId(workplace.id);
+      setWorkplaceName(`${workplace.name} (${workplace.company_name})`);
       setStep("personal");
     } catch {
       setErrors((prev) => ({
