@@ -730,6 +730,21 @@ export type Database = {
         Args: { _user_id: string; _workplace_id: string }
         Returns: boolean
       }
+      verify_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          name: string
+          workplace_id: string
+        }[]
+      }
+      verify_workplace_code: {
+        Args: { _code: string }
+        Returns: {
+          company_name: string
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       admin_request_status: "pending" | "approved" | "rejected"
