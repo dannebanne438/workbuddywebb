@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { ClipboardList, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -8,6 +9,8 @@ import type { Json } from "@/integrations/supabase/types";
 interface ChecklistItem {
   text: string;
   checked: boolean;
+  checked_by?: string | null;
+  checked_by_name?: string | null;
 }
 
 interface ChatChecklistCardProps {
@@ -15,6 +18,7 @@ interface ChatChecklistCardProps {
 }
 
 export function ChatChecklistCard({ checklistId }: ChatChecklistCardProps) {
+  const { user, profile } = useAuth();
   const [checklist, setChecklist] = useState<{
     id: string;
     title: string;
@@ -75,10 +79,21 @@ export function ChatChecklistCard({ checklistId }: ChatChecklistCardProps) {
 
   const toggleItem = useCallback(
     async (itemIndex: number) => {
-      if (!checklist) return;
+      if (!checklist || !user) return;
+
+      const currentItem = checklist.items[itemIndex];
+      const isChecking = !currentItem.checked;
+      const userName = profile?.full_name || profile?.email || "Användare";
 
       const newItems = checklist.items.map((item, idx) =>
-        idx === itemIndex ? { ...item, checked: !item.checked } : item
+        idx === itemIndex
+          ? {
+              ...item,
+              checked: isChecking,
+              checked_by: isChecking ? user.id : null,
+              checked_by_name: isChecking ? userName : null,
+            }
+          : item
       );
 
       // Optimistic update
@@ -97,7 +112,7 @@ export function ChatChecklistCard({ checklistId }: ChatChecklistCardProps) {
         );
       }
     },
-    [checklist, checklistId]
+    [checklist, checklistId, user, profile]
   );
 
   if (loading) {
@@ -177,16 +192,22 @@ export function ChatChecklistCard({ checklistId }: ChatChecklistCardProps) {
                 <Check className="h-3 w-3 text-primary-foreground" />
               )}
             </div>
-            <span
-              className={cn(
-                "flex-1",
-                item.checked
-                  ? "text-muted-foreground line-through"
-                  : "text-foreground"
+            <div className="flex-1 min-w-0">
+              <span
+                className={cn(
+                  item.checked
+                    ? "text-muted-foreground line-through"
+                    : "text-foreground"
+                )}
+              >
+                {item.text}
+              </span>
+              {item.checked && item.checked_by_name && (
+                <span className="block text-xs text-muted-foreground/70 mt-0.5">
+                  ✓ {item.checked_by_name}
+                </span>
               )}
-            >
-              {item.text}
-            </span>
+            </div>
           </button>
         ))}
       </div>
