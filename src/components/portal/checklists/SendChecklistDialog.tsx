@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Send, Users, Hash } from "lucide-react";
 import { toast } from "sonner";
 
@@ -179,7 +178,7 @@ export function SendChecklistDialog({
           </div>
 
           {/* Colleagues list */}
-          <ScrollArea className="max-h-[300px]">
+          <div className="max-h-[300px] overflow-y-auto overscroll-contain rounded-md border border-border bg-card/50">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -187,12 +186,10 @@ export function SendChecklistDialog({
             ) : colleagues.length === 0 ? (
               <div className="flex flex-col items-center py-8 text-center">
                 <Users className="h-10 w-10 text-muted-foreground/50 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Inga kollegor hittades
-                </p>
+                <p className="text-sm text-muted-foreground">Inga kollegor hittades</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="p-1 space-y-1">
                 {colleagues.map((colleague) => {
                   const name = colleague.full_name || colleague.email;
                   const isSending = sending === colleague.id;
@@ -217,9 +214,7 @@ export function SendChecklistDialog({
                       <div className="text-left flex-1 min-w-0">
                         <p className="font-medium truncate">{name}</p>
                         {colleague.full_name && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {colleague.email}
-                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{colleague.email}</p>
                         )}
                       </div>
                       <Send className="h-4 w-4 text-muted-foreground" />
@@ -228,7 +223,7 @@ export function SendChecklistDialog({
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
