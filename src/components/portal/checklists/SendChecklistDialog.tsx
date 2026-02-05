@@ -77,12 +77,8 @@ export function SendChecklistDialog({
 
   const formatChecklistMessage = () => {
     if (!checklist) return "";
-    
-    const itemsList = checklist.items
-      .map((item, index) => `${index + 1}. ${item.text}`)
-      .join("\n");
-    
-    return `📋 *${checklist.title}*\n\n${itemsList}`;
+    // Send a special format that embeds the checklist ID for interactive rendering
+    return `📋 Delad checklista: "${checklist.title}"\n[checklist:${checklist.id}]`;
   };
 
   const handleSendToGroup = async () => {
