@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ClipboardList, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ClipboardList, Check, ChevronDown, ChevronUp, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Json } from "@/integrations/supabase/types";
+import { SendChecklistDialog } from "../checklists/SendChecklistDialog";
 
 interface ChecklistItem {
   text: string;
@@ -27,6 +28,8 @@ export function ChecklistsView() {
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [selectedChecklist, setSelectedChecklist] = useState<Checklist | null>(null);
 
   useEffect(() => {
     if (activeWorkplace?.id) {
@@ -160,11 +163,25 @@ export function ChecklistsView() {
                         </p>
                       )}
                     </div>
-                    {checklist.is_template && (
-                      <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
-                        Mall
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setSelectedChecklist(checklist);
+                          setSendDialogOpen(true);
+                        }}
+                        title="Skicka till kollega"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                      {checklist.is_template && (
+                        <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                          Mall
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Progress bar */}
@@ -242,6 +259,12 @@ export function ChecklistsView() {
           </div>
         )}
       </div>
+      
+      <SendChecklistDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        checklist={selectedChecklist}
+      />
     </div>
   );
 }
