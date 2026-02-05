@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Send, MessageSquare, Users, Hash, ChevronLeft, Menu } from "lucide-react";
+import { Send, MessageSquare, Users, Hash, Menu } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { sv } from "date-fns/locale";
+import { ChatChecklistCard, parseChecklistMessage } from "../checklists/ChatChecklistCard";
 
 interface TeamMessage {
   id: string;
@@ -455,6 +456,8 @@ export function TeamChatView() {
                   <div className="space-y-3">
                     {group.messages.map((message) => {
                       const isOwnMessage = message.sender_id === user?.id;
+                      const parsed = parseChecklistMessage(message.content);
+                      
                       return (
                         <div
                           key={message.id}
@@ -467,23 +470,46 @@ export function TeamChatView() {
                               </AvatarFallback>
                             </Avatar>
                           )}
-                          <div className={`max-w-[70%] ${isOwnMessage ? "items-end" : "items-start"}`}>
+                          <div className={`max-w-[85%] ${isOwnMessage ? "items-end" : "items-start"}`}>
                             {!isOwnMessage && chatMode === "group" && (
                               <p className="text-xs text-muted-foreground mb-1 ml-1">
                                 {message.sender_name}
                               </p>
                             )}
-                            <div
-                              className={`rounded-2xl px-4 py-2 ${
-                                isOwnMessage
-                                  ? "bg-primary text-primary-foreground rounded-br-md"
-                                  : "bg-muted rounded-bl-md"
-                              }`}
-                            >
-                              <p className="text-sm whitespace-pre-wrap break-words">
-                                {message.content}
-                              </p>
-                            </div>
+                            
+                            {parsed.isChecklist && parsed.checklistId ? (
+                              // Render interactive checklist card
+                              <div className="space-y-2">
+                                {parsed.textBefore && (
+                                  <div
+                                    className={`rounded-2xl px-4 py-2 ${
+                                      isOwnMessage
+                                        ? "bg-primary text-primary-foreground rounded-br-md"
+                                        : "bg-muted rounded-bl-md"
+                                    }`}
+                                  >
+                                    <p className="text-sm whitespace-pre-wrap break-words">
+                                      {parsed.textBefore}
+                                    </p>
+                                  </div>
+                                )}
+                                <ChatChecklistCard checklistId={parsed.checklistId} />
+                              </div>
+                            ) : (
+                              // Regular message
+                              <div
+                                className={`rounded-2xl px-4 py-2 ${
+                                  isOwnMessage
+                                    ? "bg-primary text-primary-foreground rounded-br-md"
+                                    : "bg-muted rounded-bl-md"
+                                }`}
+                              >
+                                <p className="text-sm whitespace-pre-wrap break-words">
+                                  {message.content}
+                                </p>
+                              </div>
+                            )}
+                            
                             <p
                               className={`text-xs text-muted-foreground mt-1 ${
                                 isOwnMessage ? "text-right mr-1" : "ml-1"
