@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ClipboardList, Check, ChevronDown, ChevronUp, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { SendChecklistDialog } from "../checklists/SendChecklistDialog";
 interface ChecklistItem {
   text: string;
   checked: boolean;
+  checked_by?: string | null;
+  checked_by_name?: string | null;
 }
 
 interface Checklist {
@@ -25,6 +28,7 @@ interface Checklist {
 
 export function ChecklistsView() {
   const { activeWorkplace } = useWorkplace();
+  const { user, profile } = useAuth();
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -59,23 +63,29 @@ export function ChecklistsView() {
   };
 
   const toggleItem = useCallback(async (checklistId: string, itemIndex: number) => {
-    // Optimistically update UI
-    setChecklists((prev) =>
-      prev.map((checklist) => {
-        if (checklist.id !== checklistId) return checklist;
-        const newItems = checklist.items.map((item, idx) =>
-          idx === itemIndex ? { ...item, checked: !item.checked } : item
-        );
-        return { ...checklist, items: newItems };
-      })
-    );
-
-    // Find the checklist and update in database
+    if (!user) return;
+    
     const checklist = checklists.find((c) => c.id === checklistId);
     if (!checklist) return;
 
+    const currentItem = checklist.items[itemIndex];
+    const isChecking = !currentItem.checked;
+    const userName = profile?.full_name || profile?.email || "Användare";
+
     const newItems = checklist.items.map((item, idx) =>
-      idx === itemIndex ? { ...item, checked: !item.checked } : item
+      idx === itemIndex
+        ? {
+            ...item,
+            checked: isChecking,
+            checked_by: isChecking ? user.id : null,
+            checked_by_name: isChecking ? userName : null,
+          }
+        : item
+    );
+
+    // Optimistically update UI
+    setChecklists((prev) =>
+      prev.map((c) => (c.id === checklistId ? { ...c, items: newItems } : c))
     );
 
     const { error } = await supabase
@@ -88,7 +98,7 @@ export function ChecklistsView() {
       // Revert on error
       fetchChecklists();
     }
-  }, [checklists]);
+  }, [checklists, user, profile]);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -223,12 +233,18 @@ export function ChecklistsView() {
                         >
                           {item.checked && <Check className="h-3 w-3 text-primary-foreground" />}
                         </div>
-                        <span className={cn(
-                          "flex-1",
-                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
-                        )}>
-                          {item.text}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className={cn(
+                            item.checked ? "text-muted-foreground line-through" : "text-foreground"
+                          )}>
+                            {item.text}
+                          </span>
+                          {item.checked && item.checked_by_name && (
+                            <span className="block text-xs text-muted-foreground/70 mt-0.5">
+                              ✓ {item.checked_by_name}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
