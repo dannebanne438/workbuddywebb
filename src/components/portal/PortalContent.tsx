@@ -107,7 +107,7 @@ export function PortalContent() {
         </div>
         
         {/* Main Content - with top padding on mobile for header, bottom padding for nav */}
-        <div className="flex-1 overflow-hidden pt-14 pb-16 md:pt-0 md:pb-0">
+        <div className="flex-1 relative pt-14 pb-16 md:pt-0 md:pb-0">
           {renderView()}
         </div>
       </div>
