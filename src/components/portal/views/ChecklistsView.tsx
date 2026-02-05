@@ -117,8 +117,8 @@ export function ChecklistsView() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      <header className="px-6 py-4 border-b border-border bg-card">
+    <div className="h-full flex flex-col bg-background overflow-hidden">
+      <header className="px-6 py-4 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
             <ClipboardList className="h-5 w-5 text-accent" />
@@ -130,7 +130,7 @@ export function ChecklistsView() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="h-8 w-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
