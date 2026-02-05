@@ -18,31 +18,51 @@ Skapar en ny sektion som berättar om WorkBuddy-teamet på ett relaterbart sätt
 ### Undertext
 "WorkBuddy skapades inte på ett kontor långt från verkligheten — utan av ett team som själva har stått i receptionen, sprungit ronder och koordinerat event."
 
-### Tre berättelsepunkter (med ikoner)
+### Tre berättelsepunkter
 
-1. **Säkerhetsbranschen**
+1. **Säkerhetsbranschen** (Shield-ikon)
    - "Vi har själva svarat på samma frågor varje kväll: 'Vad gör jag om larmet går?' 'Vem ringer jag vid en incident?'"
 
-2. **Event & bemanning**
+2. **Event & bemanning** (Calendar-ikon)
    - "Vi har upplevt kaoset när schemat ändras i sista minuten och ingen vet vem som faktiskt jobbar."
 
-3. **Vardagen på golvet**
+3. **Vardagen på golvet** (Users-ikon)
    - "Vi har sett hur viktig info försvinner i Messenger-trådar, pärmar som ingen hittar, och chefer som aldrig får vara ifred."
 
 ### Avslutande text
 "Därför byggde vi WorkBuddy — en digital kollega som alltid finns där, alltid vet svaret, och aldrig tar semester."
 
-## Tekniska detaljer
+---
 
-### Ny fil
-`src/components/landing/AboutSection.tsx`
+## Tekniska ändringar
 
-### Uppdatering
-`src/pages/Index.tsx` — Lägga till `<AboutSection />` mellan `TrustSection` och `CTASection`
+### 1. Ny fil: `src/components/landing/AboutSection.tsx`
+- Skapar en ny React-komponent med samma struktur som TrustSection
+- Använder `py-24 lg:py-32` och `bg-card` för att alternera bakgrund
+- Responsiv grid med tre kort för berättelsepunkterna
+- Lucide-ikoner: Shield, Calendar, Users
+- Avslutande citat centrerat under korten
 
-### Designmönster
-- Samma container-struktur som övriga sektioner
-- `py-24 lg:py-32` för vertikal spacing
-- Alternerar bakgrundsfärg (`bg-card` eller `wb-gradient-hero`)
-- Lucide-ikoner för visuella element
-- Responsive grid för de tre berättelsepunkterna
+### 2. Uppdatering: `src/pages/Index.tsx`
+- Importerar `AboutSection`
+- Placerar komponenten mellan `TrustSection` och `CTASection`
+
+---
+
+## Visuell struktur
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  "Byggt av människor som förstår"                       │
+│  Undertitel med teamets bakgrund                        │
+├─────────────────────────────────────────────────────────┤
+│  ┌─────────┐   ┌─────────┐   ┌─────────┐               │
+│  │ Shield  │   │Calendar │   │  Users  │               │
+│  │ Säkerhet│   │ Event & │   │ Vardagen│               │
+│  │         │   │bemanning│   │på golvet│               │
+│  └─────────┘   └─────────┘   └─────────┘               │
+├─────────────────────────────────────────────────────────┤
+│  "Därför byggde vi WorkBuddy..."                        │
+│  (avslutande citat)                                     │
+└─────────────────────────────────────────────────────────┘
+```
