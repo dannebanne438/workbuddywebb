@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutGrid, Download } from "lucide-react";
+import { Calendar, Clock, User, ChevronLeft, ChevronRight, CalendarDays, LayoutGrid, Download, Plus, Trash2 } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { sv } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { AddShiftDialog } from "../schedules/AddShiftDialog";
+import { DeleteShiftDialog } from "../schedules/DeleteShiftDialog";
 interface Schedule {
   id: string;
   shift_date: string;
@@ -27,7 +29,7 @@ type ViewMode = "month" | "week";
 
 export function ScheduleView() {
   const { activeWorkplace } = useWorkplace();
-  const { session } = useAuth();
+  const { session, isWorkplaceAdmin } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -39,6 +41,11 @@ export function ScheduleView() {
   const [exportStartDate, setExportStartDate] = useState<string>(format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"));
   const [exportEndDate, setExportEndDate] = useState<string>(format(endOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"));
   const isMobile = useIsMobile();
+  
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<Schedule | null>(null);
 
   useEffect(() => {
     if (activeWorkplace?.id) {
@@ -196,6 +203,19 @@ export function ScheduleView() {
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Add shift button (admin only) */}
+            {isWorkplaceAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAddDialogOpen(true)}
+                className="gap-1 md:gap-2 px-2 md:px-3 text-xs md:text-sm"
+              >
+                <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Lägg till pass</span>
+              </Button>
+            )}
+            
             {/* Export button */}
             <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
               <DialogTrigger asChild>
@@ -472,8 +492,21 @@ export function ScheduleView() {
                     {selectedDateSchedules.map((schedule) => (
                       <div
                         key={schedule.id}
-                        className="bg-secondary/50 rounded-lg p-2.5 md:p-3 space-y-1.5 md:space-y-2"
+                        className="bg-secondary/50 rounded-lg p-2.5 md:p-3 space-y-1.5 md:space-y-2 relative group"
                       >
+                        {isWorkplaceAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setSelectedShift(schedule);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <div className="flex items-center gap-2 text-xs md:text-sm">
                           <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                           <span className="font-mono font-medium">
@@ -594,8 +627,21 @@ export function ScheduleView() {
                     {selectedDateSchedules.map((schedule) => (
                       <div
                         key={schedule.id}
-                        className="bg-secondary/50 rounded-lg p-3 space-y-2"
+                        className="bg-secondary/50 rounded-lg p-3 space-y-2 relative group"
                       >
+                        {isWorkplaceAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setSelectedShift(schedule);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <span className="font-mono font-medium">
@@ -633,6 +679,20 @@ export function ScheduleView() {
           </div>
         )}
       </div>
+
+      <AddShiftDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSuccess={fetchSchedules}
+        defaultDate={selectedDate}
+      />
+
+      <DeleteShiftDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        shift={selectedShift}
+        onSuccess={fetchSchedules}
+      />
     </div>
   );
 }

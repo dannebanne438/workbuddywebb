@@ -686,7 +686,13 @@ SOM ADMIN KAN DU:
   • Skapa, redigera och ta bort checklistor (create_checklist, update_checklist, delete_checklist)
   • Skapa, redigera och ta bort rutiner (create_routine, update_routine, delete_routine)
   • Skapa, redigera och ta bort nyheter (create_announcement, update_announcement, delete_announcement)
-- Använd ALLTID rätt verktyg när användaren vill göra ändringar
+
+VIKTIGT - BEKRÄFTELSE KRÄVS:
+- FRÅGA ALLTID användaren om bekräftelse INNAN du skapar, ändrar eller tar bort data
+- Presentera först vad du planerar göra, t.ex. "Jag föreslår att skapa ett pass för Anna 08:00-16:00 den 10 februari. Ska jag lägga in det?"
+- Vänta på tydligt "ja", "gör det", "lägg in det", "kör" innan du utför verktyget
+- Om användaren säger "nej" eller "avbryt", lägg INTE in något
+- Utför ALDRIG verktyg automatiskt utan bekräftelse från användaren
 ` : "- Användaren har inte admin-behörighet. Svara på frågor men gör inga ändringar."}
 
 OUTPUTFORMAT:
