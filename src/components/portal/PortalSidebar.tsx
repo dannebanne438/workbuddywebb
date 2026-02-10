@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   AlertTriangle,
   Award,
+  Sparkles,
 } from "lucide-react";
 
 type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
@@ -44,7 +45,7 @@ export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSi
 
   const navItems = [
     ...(isWorkplaceAdmin ? [{ id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard }] : []),
-    { id: "camera" as const, label: "Kamera", icon: Camera },
+    { id: "camera" as const, label: "WorkBuddy", icon: Sparkles },
     { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },

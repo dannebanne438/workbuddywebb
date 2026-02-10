@@ -1,4 +1,4 @@
-import { Camera, Calendar, ClipboardList, LayoutDashboard, AlertTriangle, MoreHorizontal } from "lucide-react";
+import { Sparkles, Calendar, ClipboardList, LayoutDashboard, AlertTriangle, MoreHorizontal } from "lucide-react";
 
 type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
@@ -10,7 +10,7 @@ interface MobileBottomNavProps {
 
 const mainNavItems = [
   { id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
-  { id: "camera" as const, label: "Kamera", icon: Camera },
+  { id: "camera" as const, label: "WorkBuddy", icon: Sparkles },
   { id: "schedule" as const, label: "Schema", icon: Calendar },
   { id: "checklists" as const, label: "Listor", icon: ClipboardList },
   { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
