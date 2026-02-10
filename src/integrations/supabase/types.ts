@@ -61,6 +61,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          image_url: string | null
           is_pinned: boolean | null
           title: string
           updated_at: string
@@ -71,6 +72,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          image_url?: string | null
           is_pinned?: boolean | null
           title: string
           updated_at?: string
@@ -81,6 +83,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          image_url?: string | null
           is_pinned?: boolean | null
           title?: string
           updated_at?: string
@@ -437,6 +440,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           reported_by: string | null
           reported_by_name: string | null
           resolved_at: string | null
@@ -450,6 +454,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           reported_by?: string | null
           reported_by_name?: string | null
           resolved_at?: string | null
@@ -463,6 +468,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           reported_by?: string | null
           reported_by_name?: string | null
           resolved_at?: string | null
