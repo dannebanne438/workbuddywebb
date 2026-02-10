@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
-import { RequestAdminAccess } from "../RequestAdminAccess";
+
 
 interface DemoPrompt {
   id: string;
@@ -185,10 +185,6 @@ export function ChatView() {
               </div>
             )}
 
-            {/* Admin request card */}
-            <div className="w-full max-w-lg mt-6">
-              <RequestAdminAccess />
-            </div>
           </div>
         ) : (
           <>
