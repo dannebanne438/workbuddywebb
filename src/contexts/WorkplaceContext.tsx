@@ -21,6 +21,8 @@ interface WorkplaceContextType {
   loading: boolean;
   /** Set the active workplace (for super admins) */
   setActiveWorkplaceId: (id: string) => void;
+  /** Refresh the workplaces list */
+  refreshWorkplaces: () => void;
 }
 
 const WorkplaceContext = createContext<WorkplaceContextType | undefined>(undefined);
@@ -31,37 +33,29 @@ export function WorkplaceProvider({ children }: { children: ReactNode }) {
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // For super admins: fetch all workplaces
-  useEffect(() => {
-    if (!user) {
+  const fetchAllWorkplaces = async () => {
+    if (!user || !isSuperAdmin) {
       setAllWorkplaces([]);
       setLoading(false);
       return;
     }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("workplaces")
+      .select("*")
+      .order("name");
 
-    if (isSuperAdmin) {
-      const fetchWorkplaces = async () => {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from("workplaces")
-          .select("*")
-          .order("name");
-
-        if (data && !error) {
-          setAllWorkplaces(data as Workplace[]);
-          // Auto-select first workplace if none selected and user has no assigned workplace
-          if (!selectedWorkplaceId && !workplace?.id && data.length > 0) {
-            setSelectedWorkplaceId(data[0].id);
-          }
-        }
-        setLoading(false);
-      };
-
-      fetchWorkplaces();
-    } else {
-      setAllWorkplaces([]);
-      setLoading(false);
+    if (data && !error) {
+      setAllWorkplaces(data as Workplace[]);
+      if (!selectedWorkplaceId && !workplace?.id && data.length > 0) {
+        setSelectedWorkplaceId(data[0].id);
+      }
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAllWorkplaces();
   }, [user, isSuperAdmin, workplace?.id]);
 
   // Determine active workplace
@@ -89,6 +83,7 @@ export function WorkplaceProvider({ children }: { children: ReactNode }) {
         allWorkplaces,
         loading,
         setActiveWorkplaceId,
+        refreshWorkplaces: fetchAllWorkplaces,
       }}
     >
       {children}

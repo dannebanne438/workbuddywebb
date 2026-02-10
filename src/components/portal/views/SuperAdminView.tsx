@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, Check, X, Building, Users, Mail, Clock, MapPin, BookMarked, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ interface SuperAdminViewProps {
 
 export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
   const { isSuperAdmin, user } = useAuth();
+  const { refreshWorkplaces } = useWorkplace();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [requests, setRequests] = useState<AdminRequest[]>([]);
@@ -354,7 +356,7 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
       <CreateWorkplaceDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onCreated={fetchData}
+        onCreated={() => { fetchData(); refreshWorkplaces(); }}
       />
     </div>
   );
