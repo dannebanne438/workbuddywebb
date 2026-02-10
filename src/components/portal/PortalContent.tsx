@@ -9,13 +9,16 @@ import { EmployeesView } from "./views/EmployeesView";
 import { SettingsView } from "./views/SettingsView";
 import { SuperAdminView } from "./views/SuperAdminView";
 import { WorkplaceDetailView } from "./views/WorkplaceDetailView";
+import { DashboardView } from "./views/DashboardView";
+import { CertificatesView } from "./views/CertificatesView";
+import { IncidentsView } from "./views/IncidentsView";
 import { PortalSidebar } from "./PortalSidebar";
 import { MobileNav } from "./MobileNav";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { OnboardingModal } from "../onboarding/OnboardingModal";
 import { useAuth } from "@/contexts/AuthContext";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 const ONBOARDING_KEY = "workbuddy_onboarding_complete";
 
@@ -51,6 +54,8 @@ export function PortalContent() {
 
   const renderView = () => {
     switch (currentView) {
+      case "dashboard":
+        return <DashboardView onNavigate={setCurrentView} />;
       case "chat":
         return <ChatView />;
       case "team-chat":
@@ -67,6 +72,10 @@ export function PortalContent() {
         return <EmployeesView />;
       case "settings":
         return <SettingsView />;
+      case "incidents":
+        return <IncidentsView />;
+      case "certificates":
+        return <CertificatesView />;
       case "admin":
         return <SuperAdminView onSelectWorkplace={handleSelectWorkplace} />;
       case "workplace-detail":

@@ -96,6 +96,62 @@ export type Database = {
           },
         ]
       }
+      certificates: {
+        Row: {
+          certificate_number: string | null
+          certificate_type: string
+          created_at: string
+          created_by: string | null
+          expiry_date: string | null
+          id: string
+          issued_date: string | null
+          issuer: string | null
+          notes: string | null
+          status: string
+          user_id: string | null
+          user_name: string
+          workplace_id: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          certificate_type: string
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          issued_date?: string | null
+          issuer?: string | null
+          notes?: string | null
+          status?: string
+          user_id?: string | null
+          user_name: string
+          workplace_id: string
+        }
+        Update: {
+          certificate_number?: string | null
+          certificate_type?: string
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          issued_date?: string | null
+          issuer?: string | null
+          notes?: string | null
+          status?: string
+          user_id?: string | null
+          user_name?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -368,6 +424,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "important_times_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          reported_by: string | null
+          reported_by_name: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          workplace_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reported_by?: string | null
+          reported_by_name?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+          workplace_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reported_by?: string | null
+          reported_by_name?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_workplace_id_fkey"
             columns: ["workplace_id"]
             isOneToOne: false
             referencedRelation: "workplaces"

@@ -19,9 +19,12 @@ import {
   Shield,
   Home,
   MessagesSquare,
+  LayoutDashboard,
+  AlertTriangle,
+  Award,
 } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 interface PortalSidebarProps {
   currentView?: PortalView;
@@ -40,16 +43,19 @@ export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSide
   };
 
   const navItems = [
+    ...(isWorkplaceAdmin ? [{ id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard }] : []),
     { id: "chat" as const, label: "WorkBuddy", icon: MessageSquare },
     { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },
     { id: "routines" as const, label: "Rutiner", icon: Book },
     { id: "announcements" as const, label: "Nyheter", icon: Bell },
+    { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
   ];
 
   const adminItems = [
     { id: "employees" as const, label: "Personal", icon: Users, requiresAdmin: true },
+    { id: "certificates" as const, label: "Certifikat", icon: Award, requiresAdmin: true },
     { id: "settings" as const, label: "Inställningar", icon: Settings, requiresAdmin: true },
   ];
 
