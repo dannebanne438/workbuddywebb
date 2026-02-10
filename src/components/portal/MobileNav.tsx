@@ -35,7 +35,7 @@ interface MobileNavProps {
 
 const viewLabels: Record<PortalView, string> = {
   dashboard: "Dashboard",
-  camera: "Kamera",
+  camera: "WorkBuddy",
   "team-chat": "Teamchatt",
   schedule: "Schema",
   checklists: "Checklistor",
@@ -61,7 +61,7 @@ export function MobileNav({ currentView, onViewChange, open, onOpenChange }: Mob
 
   const navItems = [
     ...(isWorkplaceAdmin ? [{ id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard }] : []),
-    { id: "camera" as const, label: "Kamera", icon: Camera },
+    { id: "camera" as const, label: "WorkBuddy", icon: Sparkles },
     { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },

@@ -48,7 +48,7 @@ export function CameraWithChatView() {
         >
           <Camera className="h-5 w-5 text-primary" />
           <span className="text-xs text-muted-foreground [writing-mode:vertical-lr] rotate-180">
-            Kamera
+            Foto
           </span>
         </button>
       )}
