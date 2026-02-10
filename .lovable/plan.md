@@ -1,153 +1,227 @@
 
-# Manuell Hantering + AI-bekräftelse
+
+# Fas 1: Platschef-Dashboard + Certifikathantering
 
 ## Sammanfattning
-Lägger till fullständig manuell hantering (skapa, ta bort) för schema, rutiner och nyheter - samt uppdaterar AI-assistenten så att den alltid frågar om bekräftelse innan den utför ändringar i systemet.
+Bygger ut WorkBuddy med två sammankopplade funktioner:
+1. **Platschef-dashboard** -- ett kontrolltorn med realtidsdata
+2. **Certifikathantering** -- grunden for riskmotorn
+
+Dessa bildar basen for att WorkBuddy ska ga fran "adminverktyg" till "operativsystem for byggarbetsplatser".
 
 ---
 
-## Funktionalitet som läggs till
+## Del 1: Certifikathantering (datagrund)
 
-### 1. Schema - Manuell hantering
-**Nya funktioner för admins:**
-- **"Lägg till pass"** knapp i headern
-- Dialog för att skapa nytt pass (datum, namn, start/sluttid, roll)
-- **Ta bort-knapp** på varje schemalagt pass
-- Bekräftelsedialog innan borttagning
+### Ny databastabell: `certificates`
 
-### 2. Rutiner - Manuell hantering
-**Nya funktioner för admins:**
-- **"Ny rutin"** knapp i headern
-- Dialog med fält för titel, kategori och innehåll (markdown)
-- **Ta bort-knapp** på varje rutin
-- Bekräftelsedialog innan borttagning
+| Kolumn | Typ | Beskrivning |
+|--------|-----|-------------|
+| id | uuid | PK |
+| workplace_id | uuid | FK till workplaces |
+| user_id | uuid | Koppling till profiles (nullable) |
+| user_name | text | Personnnamn (for enkel visning) |
+| certificate_type | text | Typ: "Fallskydd", "Heta arbeten", "Truck", "Lift", "El", "ID06", etc. |
+| issued_date | date | Utfardandedatum |
+| expiry_date | date | Utgangsdatum |
+| issuer | text | Utfardare (nullable) |
+| certificate_number | text | Certifikatnummer (nullable) |
+| status | text | "valid", "expiring_soon", "expired" (beraknas) |
+| notes | text | Anteckningar (nullable) |
+| created_at | timestamptz | Default now() |
+| created_by | uuid | Vem som lade till |
 
-### 3. Nyheter - Manuell hantering
-**Nya funktioner för admins:**
-- **"Ny nyhet"** knapp i headern
-- Dialog med fält för titel, innehåll och "fäst"-alternativ
-- **Ta bort-knapp** på varje nyhet
-- Bekräftelsedialog innan borttagning
+### RLS-policies
+- Admins kan skapa, lasa, uppdatera och ta bort certifikat for sin arbetsplats
+- Anstallda kan lasa certifikat for sin arbetsplats (behover se sitt eget)
+- Super admin kan se allt
 
-### 4. AI-bekräftelse före åtgärder
-Uppdaterar AI-assistentens systemprompt så att den:
-- **Alltid frågar** "Vill du att jag skapar detta?" innan den lägger in data
-- Presenterar vad som ska skapas först, väntar på bekräftelse
-- Först efter tydligt "ja" eller "gör det" utför åtgärden
+### Ny databastabell: `incidents`
+
+| Kolumn | Typ | Beskrivning |
+|--------|-----|-------------|
+| id | uuid | PK |
+| workplace_id | uuid | FK till workplaces |
+| title | text | Rubrik |
+| description | text | Beskrivning |
+| severity | text | "low", "medium", "high", "critical" |
+| category | text | "safety", "quality", "environment", "delay" |
+| reported_by | uuid | Vem som rapporterade |
+| reported_by_name | text | Namn pa rapportoren |
+| status | text | "open", "investigating", "resolved", "closed" |
+| resolved_at | timestamptz | Nar den lostes |
+| created_at | timestamptz | Default now() |
+
+### RLS-policies for incidents
+- Alla anstallda pa arbetsplatsen kan skapa och lasa incidenter
+- Admins kan uppdatera och ta bort
 
 ---
 
-## Teknisk implementation
+## Del 2: Platschef-Dashboard
 
-### Nya komponenter
+### Ny vy: `DashboardView.tsx`
+
+Dashboarden visar foljande sektioner i ett responsivt grid:
+
+**Rad 1 -- KPI-kort (4 st)**
+
+| Kort | Data | Berakning |
+|------|------|-----------|
+| Aktiva idag | Antal personer schemalagda idag | Count fran schedules for today |
+| Oppna avvikelser | Antal olosta incidenter | Count fran incidents where status != "resolved"/"closed" |
+| Utlopande certifikat | Certifikat som gar ut inom 30 dagar | Count fran certificates where expiry_date <= today+30 |
+| Veckotimmar | Totala schemalagda timmar denna vecka | Sum fran schedules |
+
+**Rad 2 -- Tva kolumner**
+
+Vanster: **Dagsoversikt** (vem jobbar idag, tider, roller)
+Hoger: **Riskvarningar** (utgangna certifikat, avvikelser, schemakrockar)
+
+**Rad 3 -- Tva kolumner**
+
+Vanster: **Senaste avvikelser** (lista med de 5 senaste incidenterna)
+Hoger: **Snabbatgarder** (knappar: "Rapportera avvikelse", "Lagg till pass", "Skapa checklista")
+
+### Ny vy: `CertificatesView.tsx`
+
+En dedikerad vy for att hantera certifikat:
+- Tabell/lista over alla certifikat per personal
+- Fargkodning: gront (giltigt), gult (gar ut inom 30 dagar), rott (utgett)
+- "Lagg till certifikat"-dialog
+- "Ta bort"-knapp med bekraftelse
+- Filtrering pa typ och status
+
+### Ny vy: `IncidentsView.tsx`
+
+En dedikerad vy for avvikelser:
+- Lista over avvikelser med severity-ikoner
+- "Rapportera avvikelse"-dialog
+- Statusuppdatering (admin)
+- Filtrering pa kategori och status
+
+---
+
+## Del 3: Navigation och routing
+
+### Uppdateringar i sidomenyn
+
+Lagger till "Dashboard" langst upp i navigeringen (for admins) och "Certifikat" under admin-sektionen. "Avvikelser" laggs till som en ny meny for alla anvandare.
 
 ```text
-src/components/portal/schedules/
-├── AddShiftDialog.tsx      # Dialog för att lägga till pass manuellt
-└── DeleteShiftDialog.tsx   # Bekräftelsedialog för borttagning
+-- NavItems (alla) --
+[Dashboard]  <-- NY (admin-only, default-vy for admins)
+WorkBuddy
+Teamchatt
+Schema
+Checklistor
+Rutiner
+Nyheter
+Avvikelser   <-- NY (alla anvandare)
 
-src/components/portal/routines/
-├── AddRoutineDialog.tsx    # Dialog för att skapa ny rutin
-└── DeleteRoutineDialog.tsx # Bekräftelsedialog för borttagning
-
-src/components/portal/announcements/
-├── AddAnnouncementDialog.tsx    # Dialog för att skapa ny nyhet
-└── DeleteAnnouncementDialog.tsx # Bekräftelsedialog för borttagning
+-- Admin --
+Personal
+Certifikat   <-- NY
+Installningar
 ```
 
-### Uppdaterade filer
+### PortalView-typ
+Utoka `PortalView` med: `"dashboard"`, `"certificates"`, `"incidents"`
 
-| Fil | Ändringar |
+### PortalContent
+Lagg till rendering av de tre nya vyerna i `renderView()` switch-satsen.
+
+### MobileBottomNav
+Byt ut ett av de befintliga nav-alternativen eller lagg till "Dashboard" som forsta alternativ (for admins).
+
+---
+
+## Del 4: AI-integration
+
+### Nya verktyg i `workbuddy-chat/index.ts`
+
+**`query_certificates`** -- Fraga om certifikat
+- "Vilka certifikat har Anna?"
+- "Vem saknar fallskyddscertifikat?"
+- "Vilka certifikat gar ut snart?"
+
+**`create_incident`** -- Rapportera avvikelse via AI
+- "Rapportera att det saknas skyddsrackke pa vaning 3"
+- "Lagg till en avvikelse: materialforrsening fran leverantor X"
+
+### Uppdaterad systemprompt
+Lagg till certifikat- och incidentdata i kontexten sa att AI:n kan svara pa fragor som:
+- "Har alla som jobbar imorgon giltigt fallskyddscert?"
+- "Visa alla oppna avvikelser"
+- "Hur manga avvikelser har vi haft denna manad?"
+
+---
+
+## Tekniska filer som skapas/andras
+
+### Nya filer
+| Fil | Beskrivning |
+|-----|-------------|
+| `src/components/portal/views/DashboardView.tsx` | Platschef-dashboard med KPI:er, dagoversikt, riskvarningar |
+| `src/components/portal/views/CertificatesView.tsx` | Certifikathantering med CRUD |
+| `src/components/portal/views/IncidentsView.tsx` | Avvikelsehantering med CRUD |
+| `src/components/portal/certificates/AddCertificateDialog.tsx` | Dialog for att lagga till certifikat |
+| `src/components/portal/certificates/DeleteCertificateDialog.tsx` | Bekraftelsedialog |
+| `src/components/portal/incidents/AddIncidentDialog.tsx` | Dialog for att rapportera avvikelse |
+
+### Andrade filer
+| Fil | Andringar |
 |-----|-----------|
-| `ScheduleView.tsx` | Lägg till "Lägg till pass"-knapp, integrera dialoger, lägg till delete-knapp på pass-kort |
-| `RoutinesView.tsx` | Lägg till "Ny rutin"-knapp, integrera dialoger, lägg till delete-knapp |
-| `AnnouncementsView.tsx` | Lägg till "Ny nyhet"-knapp, integrera dialoger, lägg till delete-knapp |
-| `workbuddy-chat/index.ts` | Ändra instruktionen från "Använd ALLTID" till "Fråga ALLTID om bekräftelse först" |
+| `src/components/portal/PortalContent.tsx` | Utoka PortalView-typ, lagg till nya vyer i renderView |
+| `src/components/portal/PortalSidebar.tsx` | Lagg till Dashboard, Avvikelser och Certifikat i menyerna |
+| `src/components/portal/MobileBottomNav.tsx` | Lagg till Dashboard-alternativ |
+| `src/components/portal/MobileNav.tsx` | Lagg till nya menyalternativ |
+| `supabase/functions/workbuddy-chat/index.ts` | Nya verktyg + utokad systemprompt |
 
-### Admin-kontroll
-Alla nya knappar visas endast för användare där `isWorkplaceAdmin === true` (från AuthContext).
-
----
-
-## AI-prompt förändring
-
-**Nuvarande instruktion (rad 689):**
-```
-- Använd ALLTID rätt verktyg när användaren vill göra ändringar
-```
-
-**Ny instruktion:**
-```
-- FRÅGA ALLTID användaren om bekräftelse INNAN du skapar, ändrar eller tar bort data
-- Presentera först vad du planerar göra, t.ex. "Jag föreslår att skapa ett pass för Anna 08:00-16:00 den 10 februari. Ska jag lägga in det?"
-- Vänta på tydligt "ja", "gör det", "lägg in det" innan du utför verktyget
-- Om användaren säger "nej" eller "avbryt", lägg INTE in något
-```
+### Databas-migrering
+- Skapa tabell `certificates` med RLS
+- Skapa tabell `incidents` med RLS
+- Aktivera realtime for `incidents` (for live-uppdateringar pa dashboarden)
 
 ---
 
-## Användargränssnitt
+## Visuell struktur -- Dashboard
 
-### Schema-vy (admin)
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  📅 Schema                              [+ Lägg till pass]│
-├─────────────────────────────────────────────────────────┤
-│  Vecka 7 • 10 feb - 16 feb             [< Idag >]      │
-├─────────────────────────────────────────────────────────┤
-│  ┌────────┐ ┌────────┐ ┌────────┐                      │
-│  │ Mån 10 │ │ Tis 11 │ │ Ons 12 │  ...                 │
-│  │ Anna   │ │ Erik   │ │ Maria  │                      │
-│  │ 08-16  │ │ 12-20  │ │ 16-22  │                      │
-│  │  [🗑️]  │ │  [🗑️]  │ │  [🗑️]  │                      │
-│  └────────┘ └────────┘ └────────┘                      │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Lägg till pass-dialog
-```text
-┌─────────────────────────────────────┐
-│  Lägg till pass                  [X] │
-├─────────────────────────────────────┤
-│  Datum:        [📅 2025-02-10]      │
-│  Personal:     [Välj person ▼]      │
-│  Starttid:     [08:00]              │
-│  Sluttid:      [16:00]              │
-│  Roll:         [Kassa]              │
-│  Anteckning:   [________________]   │
-│                                     │
-│           [Avbryt] [Lägg till]      │
-└─────────────────────────────────────┘
-```
-
-### Rutiner-vy (admin)
-```text
-┌─────────────────────────────────────────────────────────┐
-│  📖 Rutiner                              [+ Ny rutin]   │
-├─────────────────────────────────────────────────────────┤
-│  ▼ Öppningsrutin morgon          [Daglig] [🗑️]         │
-│    1. Slå på lampor...                                 │
-│                                                         │
-│  ▶ Stängningsrutin kväll         [Daglig] [🗑️]         │
-│  ▶ Nödprocedur vid brand         [Säkerhet] [🗑️]       │
-└─────────────────────────────────────────────────────────┘
++---------------------------------------------------------------+
+|  Dashboard                                 [Rapportera avvikelse]|
++---------------------------------------------------------------+
+|  [Aktiva idag]  [Oppna avvik.]  [Certifikat!]  [Veckotimmar]  |
+|      5              2               3              187h         |
++---------------------------------------------------------------+
+|  DAGENS SCHEMA                |  RISKVARNINGAR                 |
+|  08:00 Anna - Platschef       |  ! Erik: Fallskydd gar ut 15/2 |
+|  08:00 Erik - Snickare        |  ! Maria: Truck utgett         |
+|  12:00 Maria - Elektriker     |  ! 2 oppna avvikelser          |
+|  16:00 Johan - Nattvakt       |                                |
++-------------------------------+--------------------------------+
+|  SENASTE AVVIKELSER           |  SNABBATGARDER                 |
+|  [!] Saknat skyddsrackke v3   |  [+ Lagg till pass]            |
+|  [!] Materialforsening        |  [+ Skapa checklista]          |
+|  [i] Buller kl 22             |  [+ Ny rutin]                  |
++-------------------------------+--------------------------------+
 ```
 
 ---
 
-## Säkerhet
-- Endast admins (`isWorkplaceAdmin`) ser hanteringsknappar
-- RLS-policies kräver redan admin-roll för DELETE/INSERT
-- Bekräftelsedialoger förhindrar oavsiktlig borttagning
+## Mobil layout
+
+Pa mobil staplas korten vertikalt:
+1. KPI-kort (2x2 grid)
+2. Dagens schema (scrollbar lista)
+3. Riskvarningar (badges)
+4. Senaste avvikelser
+5. Snabbatgarder (horisontell scroll)
 
 ---
 
-## Testfall
-
-1. **Admin lägger till pass manuellt** → Pass syns i kalendern
-2. **Admin tar bort pass** → Bekräftelse visas → Pass försvinner
-3. **Admin lägger till rutin** → Rutin syns i listan
-4. **Admin skapar nyhet** → Nyhet visas högst upp
-5. **Vanlig anställd** → Ser inte hanteringsknapparna
-6. **AI föreslår schema** → Frågar "Ska jag lägga in det?" → Väntar på bekräftelse
-7. **AI får bekräftelse** → Utför åtgärden
+## Sakerhetsovervaganden
+- Certifikattabellen skyddas med RLS (workplace-scoped)
+- Incidenttabellen tillater alla anstallda att skapa (rapportera), men bara admins kan ta bort
+- Dashboarden visar bara data for den aktiva arbetsplatsen
+- AI-verktygen for certifikat ar read-only for icke-admins
