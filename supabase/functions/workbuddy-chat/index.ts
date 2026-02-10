@@ -256,6 +256,56 @@ const tools = [
         required: ["title"]
       }
     }
+  },
+  // Certificate tools
+  {
+    type: "function",
+    function: {
+      name: "query_certificates",
+      description: "Search and query certificates/credentials for employees. Use when user asks about certifications, safety credentials, who has valid certificates, or expiring certificates.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_name: { type: "string", description: "Filter by person name (optional)" },
+          certificate_type: { type: "string", description: "Filter by type like 'Fallskydd', 'Heta arbeten', 'Truck', 'Lift', 'El', 'ID06' (optional)" },
+          status: { type: "string", description: "Filter by status: 'valid', 'expiring_soon', 'expired' (optional)" },
+          expiring_within_days: { type: "number", description: "Find certificates expiring within N days (optional)" }
+        }
+      }
+    }
+  },
+  // Incident tools
+  {
+    type: "function",
+    function: {
+      name: "create_incident",
+      description: "Report a workplace incident/deviation. Use when user wants to report safety issues, quality problems, delays, or environmental concerns.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short title of the incident" },
+          description: { type: "string", description: "Detailed description" },
+          severity: { type: "string", description: "Severity: 'low', 'medium', 'high', 'critical'" },
+          category: { type: "string", description: "Category: 'safety', 'quality', 'environment', 'delay'" }
+        },
+        required: ["title", "severity", "category"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "query_incidents",
+      description: "Search and query workplace incidents/deviations. Use when user asks about open incidents, safety issues, or deviation history.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", description: "Filter by status: 'open', 'investigating', 'resolved', 'closed' (optional)" },
+          category: { type: "string", description: "Filter by category: 'safety', 'quality', 'environment', 'delay' (optional)" },
+          severity: { type: "string", description: "Filter by severity: 'low', 'medium', 'high', 'critical' (optional)" }
+        }
+      }
+    }
   }
 ];
 
@@ -599,6 +649,83 @@ async function executeToolCall(
 
     default:
       return { success: false, message: `Unknown tool: ${toolName}` };
+
+    // CERTIFICATE OPERATIONS
+    case "query_certificates": {
+      let query = supabaseAdmin
+        .from("certificates")
+        .select("user_name, certificate_type, issued_date, expiry_date, issuer, certificate_number, status, notes")
+        .eq("workplace_id", workplaceId)
+        .order("expiry_date", { ascending: true });
+
+      if (args.user_name) query = query.ilike("user_name", `%${args.user_name}%`);
+      if (args.certificate_type) query = query.ilike("certificate_type", `%${args.certificate_type}%`);
+      if (args.status) query = query.eq("status", args.status);
+      if (args.expiring_within_days) {
+        const futureDate = new Date(Date.now() + args.expiring_within_days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        query = query.lte("expiry_date", futureDate);
+      }
+
+      const { data, error } = await query;
+      if (error) return { success: false, message: error.message };
+
+      return {
+        success: true,
+        message: `Hittade ${data?.length || 0} certifikat`,
+        data: { action: "query_certificates", certificates: data || [], total: data?.length || 0 }
+      };
+    }
+
+    case "create_incident": {
+      // Get reporter name
+      const { data: reporter } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", userId)
+        .single();
+
+      const { data, error } = await supabaseAdmin
+        .from("incidents")
+        .insert({
+          workplace_id: workplaceId,
+          title: args.title,
+          description: args.description || null,
+          severity: args.severity || "medium",
+          category: args.category || "safety",
+          reported_by: userId,
+          reported_by_name: reporter?.full_name || reporter?.email || "Okänd",
+        })
+        .select()
+        .single();
+
+      if (error) return { success: false, message: error.message };
+      return {
+        success: true,
+        message: `Avvikelse rapporterad: "${args.title}"`,
+        data: { action: "create_incident", incident: data }
+      };
+    }
+
+    case "query_incidents": {
+      let query = supabaseAdmin
+        .from("incidents")
+        .select("title, description, severity, category, reported_by_name, status, created_at")
+        .eq("workplace_id", workplaceId)
+        .order("created_at", { ascending: false });
+
+      if (args.status) query = query.eq("status", args.status);
+      if (args.category) query = query.eq("category", args.category);
+      if (args.severity) query = query.eq("severity", args.severity);
+
+      const { data, error } = await query.limit(20);
+      if (error) return { success: false, message: error.message };
+
+      return {
+        success: true,
+        message: `Hittade ${data?.length || 0} avvikelser`,
+        data: { action: "query_incidents", incidents: data || [], total: data?.length || 0 }
+      };
+    }
   }
 }
 
@@ -612,7 +739,9 @@ function generateByggSystemPrompt(
   contacts: any[],
   schedules: any[],
   isAdmin: boolean,
-  today: string
+  today: string,
+  certificates: any[],
+  incidents: any[]
 ): string {
   // Extract projects from settings if available
   const projects = workplace?.settings?.projects || [];
@@ -670,10 +799,27 @@ ${contacts?.map(c => `- ${c.name} (${c.role}): ${c.phone || c.email}${c.is_emerg
 KOMMANDE SCHEMALAGDA PASS:
 ${schedules?.slice(0, 15).map(s => `- ${s.shift_date}: ${s.user_name || "Okänd"} ${s.start_time}-${s.end_time} (${s.role || "Byggarbetare"})`).join("\n") || "Inga."}
 
+CERTIFIKAT (utgångna/snart utgående):
+${(() => {
+  const expiring = certificates?.filter(c => c.status === "expired" || c.status === "expiring_soon") || [];
+  return expiring.length > 0
+    ? expiring.map(c => `- ${c.user_name}: ${c.certificate_type} (${c.status === "expired" ? "UTGÅNGET" : "utgår " + c.expiry_date})`).join("\n")
+    : "Inga utgångna eller snart utgående certifikat.";
+})()}
+
+ÖPPNA AVVIKELSER:
+${(() => {
+  const open = incidents?.filter(i => i.status === "open" || i.status === "investigating") || [];
+  return open.length > 0
+    ? open.map(i => `- [${i.severity.toUpperCase()}] ${i.title} (${i.category}) - rapporterad av ${i.reported_by_name || "Okänd"}`).join("\n")
+    : "Inga öppna avvikelser.";
+})()}
+
 KÄRNREGLER:
 - Arbeta alltid inom vald arbetsplats. Om du inte vet vilket objekt det gäller, fråga användaren.
 - Svara aldrig med generella råd när du kan vara konkret. Använd data från rutiner/checklistor/objekt.
 - Om en uppgift rör risk (fallrisk, heta arbeten, el, maskiner): fråga alltid om behörighet/PPE och hänvisa till relevant rutin/checklista.
+- KORSREFERERA alltid certifikat med schema: om någon ska jobba på höjd, kontrollera att de har giltigt fallskyddscertifikat.
 - Alltid föreslå nästa konkreta steg: "Vill du att jag skapar checklista?" / "Vill du att jag lägger detta som nyhet?"
 
 INSTRUKTIONER:
@@ -686,6 +832,9 @@ SOM ADMIN KAN DU:
   • Skapa, redigera och ta bort checklistor (create_checklist, update_checklist, delete_checklist)
   • Skapa, redigera och ta bort rutiner (create_routine, update_routine, delete_routine)
   • Skapa, redigera och ta bort nyheter (create_announcement, update_announcement, delete_announcement)
+  • Fråga om certifikat (query_certificates)
+  • Rapportera avvikelser (create_incident)
+  • Fråga om avvikelser (query_incidents)
 
 VIKTIGT - BEKRÄFTELSE KRÄVS:
 - FRÅGA ALLTID användaren om bekräftelse INNAN du skapar, ändrar eller tar bort data
@@ -693,7 +842,9 @@ VIKTIGT - BEKRÄFTELSE KRÄVS:
 - Vänta på tydligt "ja", "gör det", "lägg in det", "kör" innan du utför verktyget
 - Om användaren säger "nej" eller "avbryt", lägg INTE in något
 - Utför ALDRIG verktyg automatiskt utan bekräftelse från användaren
-` : "- Användaren har inte admin-behörighet. Svara på frågor men gör inga ändringar."}
+` : `- Användaren har inte admin-behörighet. Svara på frågor men gör inga ändringar.
+- Användaren kan fråga om certifikat (query_certificates) och avvikelser (query_incidents).
+- Användaren kan rapportera avvikelser (create_incident).`}
 
 OUTPUTFORMAT:
 1) Kort svar (1–2 meningar)
@@ -799,7 +950,7 @@ serve(async (req) => {
     }
 
     // Get workplace data for context
-    const [workplaceRes, routinesRes, timesRes, contactsRes, schedulesRes, employeesRes, checklistsRes, announcementsRes] = await Promise.all([
+    const [workplaceRes, routinesRes, timesRes, contactsRes, schedulesRes, employeesRes, checklistsRes, announcementsRes, certificatesRes, incidentsRes] = await Promise.all([
       supabase.from("workplaces").select("*").eq("id", workplaceId).single(),
       supabase.from("routines").select("title, content, category").eq("workplace_id", workplaceId),
       supabase.from("important_times").select("time_value, description").eq("workplace_id", workplaceId).order("sort_order"),
@@ -808,6 +959,8 @@ serve(async (req) => {
       supabase.from("profiles").select("full_name, email").eq("workplace_id", workplaceId),
       supabase.from("checklists").select("title, description, is_template").eq("workplace_id", workplaceId).limit(10),
       supabase.from("announcements").select("title, is_pinned").eq("workplace_id", workplaceId).order("created_at", { ascending: false }).limit(5),
+      supabaseAdmin.from("certificates").select("user_name, certificate_type, expiry_date, status").eq("workplace_id", workplaceId),
+      supabaseAdmin.from("incidents").select("title, severity, category, status, reported_by_name, created_at").eq("workplace_id", workplaceId).order("created_at", { ascending: false }).limit(20),
     ]);
 
     const workplace = workplaceRes.data;
@@ -818,6 +971,8 @@ serve(async (req) => {
     const employees = employeesRes.data;
     const checklists = checklistsRes.data;
     const announcements = announcementsRes.data;
+    const certificates = certificatesRes.data;
+    const incidents = incidentsRes.data;
 
     const today = new Date().toISOString().split("T")[0];
 
@@ -832,24 +987,27 @@ serve(async (req) => {
       contacts || [],
       schedules || [],
       isAdmin || false,
-      today
+      today,
+      certificates || [],
+      incidents || []
     );
 
     // messages were already extracted at line 749
 
-    // First call with tools (only if admin)
+    // First call with tools
+    const readOnlyTools = tools.filter(t => 
+      ["query_schedule", "query_certificates", "query_incidents", "create_incident"].includes(t.function.name)
+    );
+    
     const aiPayload: any = {
       model: "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
       ],
+      tools: isAdmin ? tools : readOnlyTools,
+      tool_choice: "auto",
     };
-
-    if (isAdmin) {
-      aiPayload.tools = tools;
-      aiPayload.tool_choice = "auto";
-    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
