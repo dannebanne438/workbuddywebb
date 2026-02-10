@@ -153,7 +153,40 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
-    } else {
+    } else if (action === "update-settings") {
+      const { workplace_id: wpId, settings } = body;
+
+      if (!wpId || !settings) {
+        return new Response(JSON.stringify({ error: "workplace_id och settings krävs" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get current settings and merge
+      const { data: current } = await supabaseAdmin
+        .from("workplaces")
+        .select("settings")
+        .eq("id", wpId)
+        .single();
+
+      const mergedSettings = { ...(current?.settings as Record<string, unknown> || {}), ...settings };
+
+      const { error: updateError } = await supabaseAdmin
+        .from("workplaces")
+        .update({ settings: mergedSettings })
+        .eq("id", wpId);
+
+      if (updateError) {
+        return new Response(JSON.stringify({ error: updateError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, message: "Inställningar uppdaterade" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
       return new Response(JSON.stringify({ error: "Unknown action" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
