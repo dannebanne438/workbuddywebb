@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings, Clock, Phone, FileText, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { RequestAdminAccess } from "../RequestAdminAccess";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -191,8 +192,23 @@ export function SettingsView() {
 
   if (!isWorkplaceAdmin) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-muted-foreground">Du har inte behörighet att se denna sida.</p>
+      <div className="h-full flex flex-col bg-background">
+        <header className="px-6 py-4 border-b border-border bg-card">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Settings className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-foreground">Inställningar</h1>
+              <p className="text-sm text-muted-foreground">Din profil</p>
+            </div>
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-lg">
+            <RequestAdminAccess />
+          </div>
+        </div>
       </div>
     );
   }
