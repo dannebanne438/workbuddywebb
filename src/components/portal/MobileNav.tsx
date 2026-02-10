@@ -19,9 +19,12 @@ import {
   MessagesSquare,
   Menu,
   Sparkles,
+  LayoutDashboard,
+  AlertTriangle,
+  Award,
 } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 interface MobileNavProps {
   currentView: PortalView;
@@ -31,6 +34,7 @@ interface MobileNavProps {
 }
 
 const viewLabels: Record<PortalView, string> = {
+  dashboard: "Dashboard",
   chat: "WorkBuddy",
   "team-chat": "Teamchatt",
   schedule: "Schema",
@@ -41,6 +45,8 @@ const viewLabels: Record<PortalView, string> = {
   settings: "Inställningar",
   admin: "Super Admin",
   "workplace-detail": "Arbetsplats",
+  certificates: "Certifikat",
+  incidents: "Avvikelser",
 };
 
 export function MobileNav({ currentView, onViewChange, open, onOpenChange }: MobileNavProps) {
@@ -54,16 +60,19 @@ export function MobileNav({ currentView, onViewChange, open, onOpenChange }: Mob
   };
 
   const navItems = [
+    ...(isWorkplaceAdmin ? [{ id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard }] : []),
     { id: "chat" as const, label: "WorkBuddy", icon: MessageSquare },
     { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },
     { id: "routines" as const, label: "Rutiner", icon: Book },
     { id: "announcements" as const, label: "Nyheter", icon: Bell },
+    { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
   ];
 
   const adminItems = [
     { id: "employees" as const, label: "Personal", icon: Users },
+    { id: "certificates" as const, label: "Certifikat", icon: Award },
     { id: "settings" as const, label: "Inställningar", icon: Settings },
   ];
 

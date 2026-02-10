@@ -1,6 +1,6 @@
-import { MessageSquare, Calendar, ClipboardList, Book, Bell, MoreHorizontal } from "lucide-react";
+import { MessageSquare, Calendar, ClipboardList, LayoutDashboard, AlertTriangle, MoreHorizontal } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat";
+type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 interface MobileBottomNavProps {
   currentView: PortalView;
@@ -9,11 +9,11 @@ interface MobileBottomNavProps {
 }
 
 const mainNavItems = [
+  { id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
   { id: "chat" as const, label: "AI", icon: MessageSquare },
   { id: "schedule" as const, label: "Schema", icon: Calendar },
   { id: "checklists" as const, label: "Listor", icon: ClipboardList },
-  { id: "routines" as const, label: "Rutiner", icon: Book },
-  { id: "announcements" as const, label: "Nyheter", icon: Bell },
+  { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
 ];
 
 export function MobileBottomNav({ currentView, onViewChange, onOpenMore }: MobileBottomNavProps) {
