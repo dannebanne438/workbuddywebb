@@ -1,3 +1,6 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
+import { isFeatureEnabled } from "@/lib/features";
 import { Sparkles, Calendar, ClipboardList, LayoutDashboard, AlertTriangle, MoreHorizontal } from "lucide-react";
 
 type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
@@ -17,13 +20,20 @@ const mainNavItems = [
 ];
 
 export function MobileBottomNav({ currentView, onViewChange, onOpenMore }: MobileBottomNavProps) {
+  const { isSuperAdmin } = useAuth();
+  const { activeWorkplace } = useWorkplace();
+
+  const filteredItems = mainNavItems.filter((item) =>
+    isFeatureEnabled(item.id, activeWorkplace?.settings as Record<string, unknown> | null, isSuperAdmin)
+  );
+
   // Check if current view is in the "more" menu
-  const isMoreActive = !mainNavItems.some(item => item.id === currentView);
+  const isMoreActive = !filteredItems.some(item => item.id === currentView);
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-1">
-        {mainNavItems.map((item) => {
+        {filteredItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           

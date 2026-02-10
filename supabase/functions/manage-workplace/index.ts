@@ -187,6 +187,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: "Inställningar uppdaterade" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    } else {
       return new Response(JSON.stringify({ error: "Unknown action" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
