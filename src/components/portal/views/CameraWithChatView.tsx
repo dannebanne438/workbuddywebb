@@ -2,30 +2,30 @@ import { useState } from "react";
 import { CameraView } from "./CameraView";
 import { ChatView } from "./ChatView";
 import { Button } from "@/components/ui/button";
-import { Sparkles, X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export function CameraWithChatView() {
-  const [chatOpen, setChatOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const isMobile = useIsMobile();
 
   if (isMobile) {
     return (
       <div className="h-full relative">
-        <CameraView />
-        {/* Floating chat button */}
+        <ChatView />
+        {/* Floating camera button */}
         <Button
           variant="hero"
           size="icon"
           className="fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full shadow-lg"
-          onClick={() => setChatOpen(true)}
+          onClick={() => setCameraOpen(true)}
         >
-          <Sparkles className="h-6 w-6" />
+          <Camera className="h-6 w-6" />
         </Button>
-        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+        <Sheet open={cameraOpen} onOpenChange={setCameraOpen}>
           <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl">
-            <ChatView />
+            <CameraView />
           </SheetContent>
         </Sheet>
       </div>
@@ -34,37 +34,37 @@ export function CameraWithChatView() {
 
   return (
     <div className="h-full flex">
-      {/* Camera - main area */}
-      <div className={`flex-1 transition-all duration-300 ${chatOpen ? "" : ""}`}>
-        <CameraView />
+      {/* Chat - main area */}
+      <div className="flex-1">
+        <ChatView />
       </div>
 
-      {/* Chat toggle button when closed */}
-      {!chatOpen && (
+      {/* Camera toggle button when closed */}
+      {!cameraOpen && (
         <button
-          onClick={() => setChatOpen(true)}
+          onClick={() => setCameraOpen(true)}
           className="flex flex-col items-center justify-center gap-2 w-12 bg-card border-l border-border hover:bg-secondary transition-colors"
-          title="Öppna AI-chatt"
+          title="Öppna fotodokumentation"
         >
-          <Sparkles className="h-5 w-5 text-primary" />
+          <Camera className="h-5 w-5 text-primary" />
           <span className="text-xs text-muted-foreground [writing-mode:vertical-lr] rotate-180">
-            WorkBuddy
+            Kamera
           </span>
         </button>
       )}
 
-      {/* Chat sidebar when open */}
-      {chatOpen && (
-        <div className="w-[400px] border-l border-border flex flex-col relative">
+      {/* Camera sidebar when open */}
+      {cameraOpen && (
+        <div className="w-[420px] border-l border-border flex flex-col relative">
           <Button
             variant="ghost"
             size="icon"
             className="absolute top-3 right-3 z-10"
-            onClick={() => setChatOpen(false)}
+            onClick={() => setCameraOpen(false)}
           >
             <X className="h-4 w-4" />
           </Button>
-          <ChatView />
+          <CameraView />
         </div>
       )}
     </div>
