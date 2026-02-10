@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { WorkplaceSelector } from "./WorkplaceSelector";
 import { NotificationBell } from "./notifications/NotificationBell";
 import {
-  MessageSquare,
+  Camera,
   Calendar,
   ClipboardList,
   Book,
@@ -24,7 +24,7 @@ import {
   Award,
 } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 interface MobileNavProps {
   currentView: PortalView;
@@ -35,7 +35,7 @@ interface MobileNavProps {
 
 const viewLabels: Record<PortalView, string> = {
   dashboard: "Dashboard",
-  chat: "WorkBuddy",
+  camera: "Kamera",
   "team-chat": "Teamchatt",
   schedule: "Schema",
   checklists: "Checklistor",
@@ -61,7 +61,7 @@ export function MobileNav({ currentView, onViewChange, open, onOpenChange }: Mob
 
   const navItems = [
     ...(isWorkplaceAdmin ? [{ id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard }] : []),
-    { id: "chat" as const, label: "WorkBuddy", icon: MessageSquare },
+    { id: "camera" as const, label: "Kamera", icon: Camera },
     { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },

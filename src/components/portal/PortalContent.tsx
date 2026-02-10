@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChatView } from "./views/ChatView";
+import { CameraView } from "./views/CameraView";
 import { TeamChatView } from "./views/TeamChatView";
 import { ScheduleView } from "./views/ScheduleView";
 import { ChecklistsView } from "./views/ChecklistsView";
@@ -18,13 +18,13 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { OnboardingModal } from "../onboarding/OnboardingModal";
 import { useAuth } from "@/contexts/AuthContext";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 const ONBOARDING_KEY = "workbuddy_onboarding_complete";
 
 export function PortalContent() {
   const { profile } = useAuth();
-  const [currentView, setCurrentView] = useState<PortalView>("chat");
+  const [currentView, setCurrentView] = useState<PortalView>("camera");
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -56,8 +56,8 @@ export function PortalContent() {
     switch (currentView) {
       case "dashboard":
         return <DashboardView onNavigate={setCurrentView} />;
-      case "chat":
-        return <ChatView />;
+      case "camera":
+        return <CameraView />;
       case "team-chat":
         return <TeamChatView />;
       case "schedule":
@@ -88,7 +88,7 @@ export function PortalContent() {
           <SuperAdminView onSelectWorkplace={handleSelectWorkplace} />
         );
       default:
-        return <ChatView />;
+        return <CameraView />;
     }
   };
 

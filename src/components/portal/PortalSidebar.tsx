@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { WorkplaceSelector } from "./WorkplaceSelector";
 import { NotificationBell } from "./notifications/NotificationBell";
 import {
-  MessageSquare,
+  Camera,
   Calendar,
   ClipboardList,
   Book,
@@ -24,14 +24,14 @@ import {
   Award,
 } from "lucide-react";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 interface PortalSidebarProps {
   currentView?: PortalView;
   onViewChange?: (view: PortalView) => void;
 }
 
-export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSidebarProps) {
+export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSidebarProps) {
   const { profile, signOut, isSuperAdmin, isWorkplaceAdmin } = useAuth();
   const { activeWorkplace } = useWorkplace();
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export function PortalSidebar({ currentView = "chat", onViewChange }: PortalSide
 
   const navItems = [
     ...(isWorkplaceAdmin ? [{ id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard }] : []),
-    { id: "chat" as const, label: "WorkBuddy", icon: MessageSquare },
+    { id: "camera" as const, label: "Kamera", icon: Camera },
     { id: "team-chat" as const, label: "Teamchatt", icon: MessagesSquare },
     { id: "schedule" as const, label: "Schema", icon: Calendar },
     { id: "checklists" as const, label: "Checklistor", icon: ClipboardList },

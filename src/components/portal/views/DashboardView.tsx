@@ -9,7 +9,7 @@ import { format, startOfWeek, endOfWeek } from "date-fns";
 import { sv } from "date-fns/locale";
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
 
-type PortalView = "chat" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 interface DashboardViewProps {
   onNavigate?: (view: PortalView) => void;
