@@ -17,13 +17,17 @@ import { MobileNav } from "./MobileNav";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { OnboardingModal } from "../onboarding/OnboardingModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
+import { isFeatureEnabled } from "@/lib/features";
+import { AlertTriangle } from "lucide-react";
 
 type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
 
 const ONBOARDING_KEY = "workbuddy_onboarding_complete";
 
 export function PortalContent() {
-  const { profile } = useAuth();
+  const { profile, isSuperAdmin } = useAuth();
+  const { activeWorkplace } = useWorkplace();
   const [currentView, setCurrentView] = useState<PortalView>("camera");
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -53,6 +57,16 @@ export function PortalContent() {
   };
 
   const renderView = () => {
+    // Block access to disabled features
+    if (!isFeatureEnabled(currentView, activeWorkplace?.settings as Record<string, unknown> | null, isSuperAdmin)) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center bg-background gap-3">
+          <AlertTriangle className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-muted-foreground text-center">Denna funktion är inte aktiverad för din arbetsplats.</p>
+        </div>
+      );
+    }
+
     switch (currentView) {
       case "dashboard":
         return <DashboardView onNavigate={setCurrentView} />;

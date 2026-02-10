@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
+import { isFeatureEnabled } from "@/lib/features";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { WorkplaceSelector } from "./WorkplaceSelector";
@@ -104,7 +105,9 @@ export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSi
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {navItems
+          .filter((item) => isFeatureEnabled(item.id, activeWorkplace?.settings as Record<string, unknown> | null, isSuperAdmin))
+          .map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
@@ -129,7 +132,9 @@ export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSi
             <div className="py-2">
               <div className={`h-px bg-border ${collapsed ? "mx-2" : ""}`} />
             </div>
-            {adminItems.map((item) => {
+            {adminItems
+              .filter((item) => isFeatureEnabled(item.id, activeWorkplace?.settings as Record<string, unknown> | null, isSuperAdmin))
+              .map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
               return (
