@@ -53,12 +53,12 @@ export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSi
     { id: "routines" as const, label: "Rutiner", icon: Book },
     { id: "announcements" as const, label: "Nyheter", icon: Bell },
     { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
+    { id: "settings" as const, label: "Inställningar", icon: Settings },
   ];
 
   const adminItems = [
     { id: "employees" as const, label: "Personal", icon: Users, requiresAdmin: true },
     { id: "certificates" as const, label: "Certifikat", icon: Award, requiresAdmin: true },
-    { id: "settings" as const, label: "Inställningar", icon: Settings, requiresAdmin: true },
   ];
 
   const superAdminItems = [
