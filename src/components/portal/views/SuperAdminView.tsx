@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Check, X, Building, Users, Mail, Clock, MapPin, BookMarked } from "lucide-react";
+import { Shield, Check, X, Building, Users, Mail, Clock, MapPin, BookMarked, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { MapLeadFinder } from "./MapLeadFinder";
 import { SavedLeadsView } from "./SavedLeadsView";
+import { CreateWorkplaceDialog } from "../superadmin/CreateWorkplaceDialog";
 
 type TabType = "overview" | "prospecting" | "saved-leads";
 
@@ -54,6 +55,7 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
   const [leads, setLeads] = useState<ContactLead[]>([]);
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -259,10 +261,16 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
 
             {/* Workplaces */}
             <div>
-              <h2 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Arbetsplatser ({workplaces.length})
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-foreground flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Arbetsplatser ({workplaces.length})
+                </h2>
+                <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Ny arbetsplats
+                </Button>
+              </div>
               <div className="space-y-3">
                 {workplaces.map((wp) => (
                   <div
@@ -343,6 +351,11 @@ export function SuperAdminView({ onSelectWorkplace }: SuperAdminViewProps) {
         )}
         </div>
       )}
+      <CreateWorkplaceDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreated={fetchData}
+      />
     </div>
   );
 }

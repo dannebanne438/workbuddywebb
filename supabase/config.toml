@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.prospect-search]
 verify_jwt = false
+
+[functions.manage-workplace]
+verify_jwt = false
