@@ -14,11 +14,11 @@ export function CameraWithChatView() {
     return (
       <div className="h-full relative">
         <ChatView />
-        {/* Floating camera button */}
+        {/* Floating camera button - positioned above bottom nav and chat input */}
         <Button
           variant="hero"
           size="icon"
-          className="fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full shadow-lg"
+          className="fixed bottom-36 right-4 z-40 h-14 w-14 rounded-full shadow-lg"
           onClick={() => setCameraOpen(true)}
         >
           <Camera className="h-6 w-6" />
