@@ -12,12 +12,14 @@ import {
   Phone,
   MessageSquare,
   Copy,
-  KeyRound
+  KeyRound,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ResetPasswordDialog } from "../superadmin/ResetPasswordDialog";
+import { WorkplaceAIPromptEditor } from "../superadmin/WorkplaceAIPromptEditor";
 
 interface WorkplaceDetailViewProps {
   workplaceId: string;
@@ -31,6 +33,7 @@ interface Workplace {
   workplace_code: string;
   industry: string | null;
   workplace_type: string | null;
+  settings: any;
   created_at: string;
 }
 
@@ -276,6 +279,10 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
               <Phone className="h-4 w-4" />
               Kontakter ({contacts.length})
             </TabsTrigger>
+            <TabsTrigger value="ai-prompt" className="gap-2">
+              <Bot className="h-4 w-4" />
+              AI-prompt
+            </TabsTrigger>
           </TabsList>
 
           {/* Employees Tab */}
@@ -471,6 +478,14 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          {/* AI Prompt Tab */}
+          <TabsContent value="ai-prompt">
+            <WorkplaceAIPromptEditor
+              workplaceId={workplaceId}
+              initialPrompt={(workplace?.settings as any)?.custom_prompt || ""}
+            />
           </TabsContent>
         </Tabs>
       </div>

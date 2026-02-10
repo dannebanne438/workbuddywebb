@@ -854,7 +854,9 @@ OUTPUTFORMAT:
 
 VIKTIGT VID SÄKERHETSFRÅGOR:
 - Om data saknas: föreslå att lägga till rutin (t.ex. "Arbete på höjd") eller checklista (t.ex. "Daglig säkerhetskontroll")
-- Prioritera alltid arbetsmiljö och säkerhet`;
+- Prioritera alltid arbetsmiljö och säkerhet
+
+${workplace?.settings?.custom_prompt ? `\nARBETSPLATSSPECIFIKA INSTRUKTIONER (från arbetsplatsadmin):\n${workplace.settings.custom_prompt}\n` : ""}`;
 }
 
 serve(async (req) => {
