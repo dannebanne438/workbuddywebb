@@ -1,73 +1,65 @@
 
-
-# Super Admin: Arbetsplatshantering och Losenordsaterst allning
+# Funktionshantering per arbetsplats
 
 ## Oversikt
-Utoka SuperAdminView (WorkBuddy HQ) med tva nya funktioner:
-1. **Skapa nya arbetsplatser** direkt fran portalen
-2. **Per arbetsplats: hantera anstallda** (aterstalla losenord, se platskoder)
+Lagg till mojlighet for super admin att aktivera/inaktivera specifika moduler (funktioner) per arbetsplats. Till exempel kan ett sakerhetsbolag stanga av "Certifikat" medan ett gym har det aktiverat. Dessa installningar sparas i arbetsplatsens `settings`-kolumn (JSON) och styr vilka menyval som syns i sidomenyn.
 
-## Nuvarande situation
-- SuperAdminView visar arbetsplatser med platskoder, men kan inte skapa nya
-- WorkplaceDetailView visar data per arbetsplats men saknar losenordshantering
-- Edge function `create-workplace-user` finns redan for att skapa anvandare
-- RLS pa `workplaces`-tabellen tillater INTE insert/update (maste fixas via edge function eller migration)
+## Hur det fungerar
 
-## Plan
+1. **Ny flik "Funktioner" i WorkplaceDetailView** -- en lista med alla tillgangliga moduler (Schema, Checklistor, Rutiner, Nyheter, Avvikelser, Certifikat, Teamchatt, Dashboard) dar varje modul har en toggle (switch) for att aktivera/inaktivera.
 
-### 1. Lagg till "Skapa arbetsplats"-dialog i SuperAdminView
-- En "Ny arbetsplats"-knapp i oversikten
-- Dialog med falten: Namn, Foretagsnamn, Bransch, Arbetsplatstyp, Platskod
-- Platskod auto-genereras men kan anpassas
-- Skapar via en ny edge function `manage-workplace` (eftersom RLS blockerar INSERT pa workplaces-tabellen fran klienten)
+2. **Sparas i settings-kolumnen** -- nar super admin andrar en toggle anropas edge function `manage-workplace` med action `update-settings` och sparar t.ex.:
+```text
+settings: {
+  "custom_prompt": "...",
+  "enabled_features": ["schedule", "checklists", "routines", "announcements", "incidents", "team-chat", "dashboard"]
+}
+```
+Nar `enabled_features` saknas (befintliga arbetsplatser) aktiveras alla funktioner som standard.
 
-### 2. Ny edge function: `manage-workplace`
-- Verifierar att anroparen ar super_admin
-- Stodjer tva operationer:
-  - `create`: Skapar ny arbetsplats i workplaces-tabellen
-  - `reset-password`: Aterstaller losenord for en anvandare via `supabase.auth.admin.updateUserById()`
-- Anvander service role key (redan tillganglig)
+3. **Sidomenyn filtreras** -- `PortalSidebar`, `MobileNav` och `MobileBottomNav` laser `activeWorkplace.settings.enabled_features` och doljer menyval som inte ar aktiverade. Super admins ser alltid alla menyval.
 
-### 3. Utoka WorkplaceDetailView med losenordshantering
-- I anstallda-fliken: lagg till en "Aterstall losenord"-knapp per anvandare
-- Oppnar en dialog dar super admin anger nytt losenord
-- Anropar edge function `manage-workplace` med `reset-password`-operationen
-- Visar bekraftelse efter lyckad aterstallning
-
-### 4. Visa platskod tydligare
-- Platskoden visas redan i bade SuperAdminView och WorkplaceDetailView
-- Lagg till kopiera-knapp pa platskoden i WorkplaceDetailView-headern
+4. **PortalContent blockerar vy** -- om en anvandare forsaker navigera till en inaktiverad funktion visas ett meddelande ("Denna funktion ar inte aktiverad for din arbetsplats").
 
 ## Tekniska detaljer
 
-### Edge function: `manage-workplace`
+### Komponenter som andras
+
+**Ny komponent:** `src/components/portal/superadmin/WorkplaceFeatureManager.tsx`
+- Lista med alla moduler, varje med namn, ikon och Switch-komponent
+- Anropar `manage-workplace` edge function med `update-settings` (redan implementerad)
+- Default: alla features aktiverade
+
+**`WorkplaceDetailView.tsx`**
+- Lagg till ny TabsTrigger "Funktioner" med Settings-ikon
+- Renderar WorkplaceFeatureManager-komponenten
+
+**`PortalSidebar.tsx`**
+- Lasa `activeWorkplace?.settings?.enabled_features` fran WorkplaceContext
+- Filtrera `navItems` och `adminItems` baserat pa enabled_features
+- Om enabled_features ar `undefined`/`null`, visa alla (bakatkompabilitet)
+
+**`MobileBottomNav.tsx` och `MobileNav.tsx`**
+- Samma filtrering som PortalSidebar
+
+**`WorkplaceContext.tsx`**
+- Kontrollera att `settings` hamtas och ar tillgangligt via kontexten (verifiera att `workplaces`-queryn inkluderar settings)
+
+### Feature-ID-mappning
 ```text
-POST /manage-workplace
-Authorization: Bearer <token>
-
-// Skapa arbetsplats:
-{
-  "action": "create",
-  "name": "Gym Solna",
-  "company_name": "FitLife AB",
-  "industry": "Halsa & Fitness",
-  "workplace_type": "Gym",
-  "workplace_code": "FITSOLNA"  // valfritt, auto-genereras annars
-}
-
-// Aterstalla losenord:
-{
-  "action": "reset-password",
-  "user_id": "uuid",
-  "new_password": "nyttlosenord123"
-}
+Modul             | Feature ID
+------------------|------------
+Dashboard         | dashboard
+WorkBuddy (chat)  | camera (alltid aktiv, kan inte inaktiveras)
+Teamchatt         | team-chat
+Schema            | schedule
+Checklistor       | checklists
+Rutiner           | routines
+Nyheter           | announcements
+Avvikelser        | incidents
+Certifikat        | certificates
+Personal          | employees
 ```
 
-### Komponenter som andras
-- `SuperAdminView.tsx` -- lagg till "Ny arbetsplats"-knapp + dialog
-- `WorkplaceDetailView.tsx` -- lagg till losenordsknapp per anvandare i anstallda-tabellen
-- Ny fil: `supabase/functions/manage-workplace/index.ts`
-
-### Databasandringar
-Inga migrationer behovs -- edge function anvander service role som kringgar RLS.
-
+### Ingen databasmigration kravs
+Allt sparas i den befintliga `settings` JSONB-kolumnen via den redan existerande `update-settings`-operationen i `manage-workplace` edge function.
