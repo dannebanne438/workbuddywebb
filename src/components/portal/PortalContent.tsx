@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CameraView } from "./views/CameraView";
+import { CameraWithChatView } from "./views/CameraWithChatView";
 import { TeamChatView } from "./views/TeamChatView";
 import { ScheduleView } from "./views/ScheduleView";
 import { ChecklistsView } from "./views/ChecklistsView";
@@ -57,7 +57,7 @@ export function PortalContent() {
       case "dashboard":
         return <DashboardView onNavigate={setCurrentView} />;
       case "camera":
-        return <CameraView />;
+        return <CameraWithChatView />;
       case "team-chat":
         return <TeamChatView />;
       case "schedule":
@@ -88,7 +88,7 @@ export function PortalContent() {
           <SuperAdminView onSelectWorkplace={handleSelectWorkplace} />
         );
       default:
-        return <CameraView />;
+        return <CameraWithChatView />;
     }
   };
 
