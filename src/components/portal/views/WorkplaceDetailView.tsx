@@ -10,10 +10,14 @@ import {
   Bell,
   Clock,
   Phone,
-  MessageSquare
+  MessageSquare,
+  Copy,
+  KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { ResetPasswordDialog } from "../superadmin/ResetPasswordDialog";
 
 interface WorkplaceDetailViewProps {
   workplaceId: string;
@@ -84,6 +88,7 @@ interface ImportantTime {
 }
 
 export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailViewProps) {
+  const { toast } = useToast();
   const [workplace, setWorkplace] = useState<Workplace | null>(null);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -93,6 +98,14 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [importantTimes, setImportantTimes] = useState<ImportantTime[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resetUser, setResetUser] = useState<{ id: string; name: string } | null>(null);
+
+  const copyCode = () => {
+    if (workplace?.workplace_code) {
+      navigator.clipboard.writeText(workplace.workplace_code);
+      toast({ title: "Platskod kopierad!" });
+    }
+  };
 
   useEffect(() => {
     fetchAllData();
@@ -204,9 +217,14 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="font-semibold text-foreground">{workplace.name}</h1>
-              <span className="font-mono text-xs text-primary bg-primary/10 px-2 py-1 rounded">
+              <button
+                onClick={copyCode}
+                className="flex items-center gap-1 font-mono text-xs text-primary bg-primary/10 px-2 py-1 rounded hover:bg-primary/20 transition-colors"
+                title="Kopiera platskod"
+              >
                 {workplace.workplace_code}
-              </span>
+                <Copy className="h-3 w-3" />
+              </button>
             </div>
             <p className="text-sm text-muted-foreground">{workplace.company_name}</p>
           </div>
@@ -272,6 +290,7 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase">Namn</th>
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase">E-post</th>
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground uppercase">Registrerad</th>
+                      <th className="text-right p-3 text-xs font-medium text-muted-foreground uppercase">Åtgärd</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -280,6 +299,16 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
                         <td className="p-3 text-sm text-foreground">{emp.full_name || "-"}</td>
                         <td className="p-3 text-sm text-muted-foreground">{emp.email}</td>
                         <td className="p-3 text-sm text-muted-foreground">{formatDate(emp.created_at)}</td>
+                        <td className="p-3 text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setResetUser({ id: emp.id, name: emp.full_name || emp.email })}
+                          >
+                            <KeyRound className="h-3 w-3 mr-1" />
+                            Lösenord
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -445,6 +474,15 @@ export function WorkplaceDetailView({ workplaceId, onBack }: WorkplaceDetailView
           </TabsContent>
         </Tabs>
       </div>
+
+      {resetUser && (
+        <ResetPasswordDialog
+          open={!!resetUser}
+          onOpenChange={(open) => !open && setResetUser(null)}
+          userId={resetUser.id}
+          userName={resetUser.name}
+        />
+      )}
     </div>
   );
 }
