@@ -23,8 +23,8 @@ import {
   MicOff,
   Plus,
   MessageSquare,
-  ChevronLeft,
-  ChevronRight,
+  History,
+  X,
 } from "lucide-react";
 
 interface DemoPrompt {
@@ -164,14 +164,24 @@ export function ChatView() {
   };
 
   return (
-    <div className="h-full flex bg-background">
-      {/* Conversation sidebar */}
-      <div className={`${sidebarOpen ? "w-72" : "w-0"} md:w-64 transition-all duration-300 overflow-hidden border-r border-border bg-card flex-shrink-0 flex flex-col`}>
-        <div className="p-3 border-b border-border flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground">Konversationer</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewChat} title="Ny konversation">
-            <Plus className="h-4 w-4" />
-          </Button>
+    <div className="h-full flex bg-background relative">
+      {/* Overlay when sidebar is open */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/40 z-30" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Conversation sidebar - slides in from left */}
+      <div className={`fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] transform transition-transform duration-300 ease-in-out bg-card border-r border-border flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <span className="text-sm font-semibold text-foreground">Tidigare konversationer</span>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewChat} title="Ny konversation">
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {conversations.length === 0 ? (
@@ -216,10 +226,6 @@ export function ChatView() {
         <header className="px-4 sm:px-6 py-4 border-b border-border bg-card">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* Mobile sidebar toggle */}
-              <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              </Button>
               <div className="h-10 w-10 rounded-xl wb-gradient-accent flex items-center justify-center">
                 <Sparkles className="h-5 w-5 text-primary-foreground" />
               </div>
@@ -229,6 +235,9 @@ export function ChatView() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} title="Visa historik">
+                <History className="h-4 w-4 mr-1" /> Historik
+              </Button>
               <Button variant="ghost" size="sm" onClick={handleNewChat} title="Ny konversation">
                 <Plus className="h-4 w-4 mr-1" /> Ny
               </Button>
