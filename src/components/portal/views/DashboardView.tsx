@@ -110,7 +110,10 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
             <p className="text-xs text-muted-foreground">Aktiva idag</p>
           </CardContent>
         </Card>
-        <Card className={openIncidents > 0 ? "border-destructive/50" : ""}>
+        <Card
+          className={`${openIncidents > 0 ? "border-destructive/50" : ""} cursor-pointer hover:bg-accent/50 transition-colors`}
+          onClick={() => onNavigate?.("incidents")}
+        >
           <CardContent className="p-4 text-center">
             <AlertTriangle className={`h-5 w-5 mx-auto mb-1 ${openIncidents > 0 ? "text-destructive" : "text-primary"}`} />
             <p className="text-2xl font-bold text-foreground">{openIncidents}</p>
@@ -186,7 +189,11 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
               <p className="text-sm text-muted-foreground">Inga avvikelser</p>
             ) : (
               recentIncidents.map((inc: any) => (
-                <div key={inc.id} className="flex items-center gap-2 text-sm">
+                <div
+                  key={inc.id}
+                  className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded p-1 -m-1 transition-colors"
+                  onClick={() => onNavigate?.("incidents")}
+                >
                   <AlertTriangle className={`h-3.5 w-3.5 shrink-0 ${SEVERITY_COLORS[inc.severity] || ""}`} />
                   <span className="text-foreground truncate">{inc.title}</span>
                   <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">

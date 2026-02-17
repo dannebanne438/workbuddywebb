@@ -24,9 +24,11 @@ import {
   AlertTriangle,
   Award,
   Sparkles,
+  FileText,
+  Image,
 } from "lucide-react";
 
-type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos";
 
 interface PortalSidebarProps {
   currentView?: PortalView;
@@ -53,6 +55,8 @@ export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSi
     { id: "routines" as const, label: "Rutiner", icon: Book },
     { id: "announcements" as const, label: "Nyheter", icon: Bell },
     { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
+    { id: "documents" as const, label: "Dokument", icon: FileText },
+    { id: "photos" as const, label: "Bildbank", icon: Image },
     { id: "settings" as const, label: "Inställningar", icon: Settings },
   ];
 

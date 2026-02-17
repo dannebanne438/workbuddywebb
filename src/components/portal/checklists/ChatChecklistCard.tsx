@@ -137,11 +137,13 @@ export function ChatChecklistCard({ checklistId }: ChatChecklistCardProps) {
 
   const completedCount = checklist.items.filter((i) => i.checked).length;
   const totalCount = checklist.items.length;
-  const progressPercent =
-    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const progressColor = progressPercent <= 33 ? "bg-red-500" : progressPercent <= 66 ? "bg-yellow-500" : "bg-green-500";
+  const borderColor = progressPercent <= 33 ? "border-red-500/50" : progressPercent <= 66 ? "border-yellow-500/50" : "border-green-500/50";
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 max-w-sm">
+    <div className={cn("bg-card border rounded-xl p-4 max-w-sm", borderColor)}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -162,10 +164,7 @@ export function ChatChecklistCard({ checklistId }: ChatChecklistCardProps) {
         <div className="mb-3">
           <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
             <div
-              className={cn(
-                "h-full transition-all duration-300",
-                progressPercent === 100 ? "bg-accent" : "bg-primary"
-              )}
+              className={cn("h-full transition-all duration-300", progressColor)}
               style={{ width: `${progressPercent}%` }}
             />
           </div>

@@ -23,9 +23,11 @@ import {
   LayoutDashboard,
   AlertTriangle,
   Award,
+  FileText,
+  Image,
 } from "lucide-react";
 
-type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos";
 
 interface MobileNavProps {
   currentView: PortalView;
@@ -48,6 +50,8 @@ const viewLabels: Record<PortalView, string> = {
   "workplace-detail": "Arbetsplats",
   certificates: "Certifikat",
   incidents: "Avvikelser",
+  documents: "Dokument",
+  photos: "Bildbank",
 };
 
 export function MobileNav({ currentView, onViewChange, open, onOpenChange }: MobileNavProps) {
@@ -69,6 +73,8 @@ export function MobileNav({ currentView, onViewChange, open, onOpenChange }: Mob
     { id: "routines" as const, label: "Rutiner", icon: Book },
     { id: "announcements" as const, label: "Nyheter", icon: Bell },
     { id: "incidents" as const, label: "Avvikelser", icon: AlertTriangle },
+    { id: "documents" as const, label: "Dokument", icon: FileText },
+    { id: "photos" as const, label: "Bildbank", icon: Image },
   ];
 
   const adminItems = [
