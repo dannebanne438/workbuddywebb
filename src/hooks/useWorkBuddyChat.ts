@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Message = {
@@ -27,6 +27,16 @@ export function useWorkBuddyChat() {
   const [error, setError] = useState<string | null>(null);
   const [toolResults, setToolResults] = useState<ToolResult[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const messagesRef = useRef<Message[]>([]);
+
+  // Keep ref in sync
+  const updateMessages = (updater: (prev: Message[]) => Message[]) => {
+    setMessages((prev) => {
+      const next = updater(prev);
+      messagesRef.current = next;
+      return next;
+    });
+  };
 
   const loadConversation = useCallback(async (convId: string) => {
     const { data } = await supabase
@@ -36,7 +46,9 @@ export function useWorkBuddyChat() {
       .order("created_at", { ascending: true });
 
     if (data) {
-      setMessages(data.map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content })));
+      const loaded = data.map((m: any) => ({ role: m.role as "user" | "assistant", content: m.content }));
+      setMessages(loaded);
+      messagesRef.current = loaded;
     }
     setConversationId(convId);
     setError(null);
@@ -45,6 +57,7 @@ export function useWorkBuddyChat() {
 
   const startNewConversation = useCallback(() => {
     setMessages([]);
+    messagesRef.current = [];
     setConversationId(null);
     setError(null);
     setToolResults([]);
@@ -53,27 +66,31 @@ export function useWorkBuddyChat() {
   const sendMessage = useCallback(async (input: string, options: SendMessageOptions) => {
     const { session, workplaceId } = options;
 
-    if (!session?.access_token) {
-      setError("Not authenticated");
+    if (!session?.access_token || !workplaceId) {
+      setError(!session?.access_token ? "Inte inloggad" : "Ingen arbetsplats vald");
       return;
     }
 
     const userMsg: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMsg]);
+    const prevMessages = messagesRef.current;
+    updateMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
     setError(null);
     setToolResults([]);
 
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error("Inte inloggad");
+
       // Create conversation if needed
       let activeConvId = conversationId;
-      if (!activeConvId && workplaceId) {
+      if (!activeConvId) {
         const { data: conv } = await supabase
           .from("conversations")
           .insert({
-            user_id: (await supabase.auth.getUser()).data.user?.id,
+            user_id: authUser.id,
             workplace_id: workplaceId,
-            title: input.slice(0, 60),
+            title: input.length > 50 ? input.slice(0, 50) + "…" : input,
           })
           .select("id")
           .single();
@@ -83,18 +100,15 @@ export function useWorkBuddyChat() {
         }
       }
 
-      // Save user message to DB
+      // Save user message
       if (activeConvId) {
-        const userId = (await supabase.auth.getUser()).data.user?.id;
-        if (userId) {
-          await supabase.from("chat_messages").insert({
-            conversation_id: activeConvId,
-            user_id: userId,
-            workplace_id: workplaceId || "",
-            role: "user",
-            content: input,
-          });
-        }
+        await supabase.from("chat_messages").insert({
+          conversation_id: activeConvId,
+          user_id: authUser.id,
+          workplace_id: workplaceId,
+          role: "user",
+          content: input,
+        });
       }
 
       const response = await fetch(
@@ -106,8 +120,8 @@ export function useWorkBuddyChat() {
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            messages: [...messages, userMsg],
-            workplaceId: workplaceId || undefined,
+            messages: [...prevMessages, userMsg],
+            workplaceId,
           }),
         }
       );
@@ -122,26 +136,17 @@ export function useWorkBuddyChat() {
       const data = await response.json();
 
       if (data.response) {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
+        updateMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
 
-        // Save assistant message to DB
+        // Save assistant message
         if (activeConvId) {
-          const userId = (await supabase.auth.getUser()).data.user?.id;
-          if (userId) {
-            await supabase.from("chat_messages").insert({
-              conversation_id: activeConvId,
-              user_id: userId,
-              workplace_id: workplaceId || "",
-              role: "assistant",
-              content: data.response,
-            });
-          }
-        }
-
-        // Update conversation title with first response if it's the first exchange
-        if (activeConvId && messages.length === 0) {
-          const shortTitle = input.length > 50 ? input.slice(0, 50) + "…" : input;
-          await supabase.from("conversations").update({ title: shortTitle }).eq("id", activeConvId);
+          await supabase.from("chat_messages").insert({
+            conversation_id: activeConvId,
+            user_id: authUser.id,
+            workplace_id: workplaceId,
+            role: "assistant",
+            content: data.response,
+          });
         }
 
         if (data.tool_results && Array.isArray(data.tool_results)) {
@@ -151,15 +156,16 @@ export function useWorkBuddyChat() {
         throw new Error(data.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : "Okänt fel");
       console.error("Chat error:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [messages, conversationId]);
+  }, [conversationId]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
+    messagesRef.current = [];
     setConversationId(null);
     setError(null);
     setToolResults([]);

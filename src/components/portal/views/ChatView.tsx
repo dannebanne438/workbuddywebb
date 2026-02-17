@@ -178,10 +178,12 @@ export function ChatView() {
             <p className="text-xs text-muted-foreground text-center py-4">Inga sparade konversationer</p>
           ) : (
             conversations.map((conv) => (
-              <button
+              <div
                 key={conv.id}
                 onClick={() => handleSelectConversation(conv)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center gap-2 ${
+                role="button"
+                tabIndex={0}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors group flex items-center gap-2 cursor-pointer ${
                   conversationId === conv.id
                     ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-secondary"
@@ -202,7 +204,7 @@ export function ChatView() {
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
-              </button>
+              </div>
             ))
           )}
         </div>
