@@ -9,6 +9,8 @@ export const ALL_FEATURE_IDS = [
   "incidents",
   "certificates",
   "employees",
+  "documents",
+  "photos",
 ] as const;
 
 export type FeatureId = (typeof ALL_FEATURE_IDS)[number];

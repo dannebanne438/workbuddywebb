@@ -192,6 +192,9 @@ export type Database = {
       }
       checklists: {
         Row: {
+          completed_at: string | null
+          completed_by: string | null
+          completed_by_name: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -199,11 +202,15 @@ export type Database = {
           id: string
           is_template: boolean | null
           items: Json | null
+          status: string
           title: string
           updated_at: string
           workplace_id: string
         }
         Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -211,11 +218,15 @@ export type Database = {
           id?: string
           is_template?: boolean | null
           items?: Json | null
+          status?: string
           title: string
           updated_at?: string
           workplace_id: string
         }
         Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -223,6 +234,7 @@ export type Database = {
           id?: string
           is_template?: boolean | null
           items?: Json | null
+          status?: string
           title?: string
           updated_at?: string
           workplace_id?: string
@@ -399,6 +411,53 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          title: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          workplace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          title: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          workplace_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          title?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       important_times: {
         Row: {
           created_at: string
@@ -568,6 +627,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photos: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          tags: string[] | null
+          title: string | null
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          workplace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          tags?: string[] | null
+          title?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          workplace_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          tags?: string[] | null
+          title?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_workplace_id_fkey"
             columns: ["workplace_id"]
             isOneToOne: false
             referencedRelation: "workplaces"
