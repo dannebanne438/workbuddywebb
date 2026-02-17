@@ -70,6 +70,28 @@ export function CameraView() {
     const preview = URL.createObjectURL(file);
     setImagePreview(preview);
     await analyzeImage(file);
+    // Also save to photos (Bildbank) privately
+    await saveToPhotos(file);
+  };
+
+  const saveToPhotos = async (file: File) => {
+    if (!activeWorkplace?.id || !user) return;
+    try {
+      const filePath = `${activeWorkplace.id}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage.from("photos").upload(filePath, file);
+      if (uploadError) return; // silently fail, main flow continues
+      const { data: urlData } = supabase.storage.from("photos").getPublicUrl(filePath);
+      await supabase.from("photos").insert({
+        workplace_id: activeWorkplace.id,
+        title: file.name.replace(/\.[^.]+$/, ""),
+        image_url: urlData.publicUrl,
+        category: "Fotodokumentation",
+        uploaded_by: user.id,
+        uploaded_by_name: profile?.full_name || profile?.email || "Användare",
+      });
+    } catch {
+      // Don't block main flow
+    }
   };
 
   const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
