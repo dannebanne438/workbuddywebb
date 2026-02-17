@@ -106,13 +106,14 @@ export function useWorkBuddyChat() {
 
       // Save user message
       if (activeConvId) {
-        await supabase.from("chat_messages").insert({
+        const { error: insertError } = await supabase.from("chat_messages").insert({
           conversation_id: activeConvId,
           user_id: authUser.id,
           workplace_id: workplaceId,
           role: "user",
           content: input,
         });
+        if (insertError) console.error("Failed to save user message:", insertError);
       }
 
       const response = await fetch(
@@ -144,13 +145,14 @@ export function useWorkBuddyChat() {
 
         // Save assistant message
         if (activeConvId) {
-          await supabase.from("chat_messages").insert({
+          const { error: saveError } = await supabase.from("chat_messages").insert({
             conversation_id: activeConvId,
             user_id: authUser.id,
             workplace_id: workplaceId,
             role: "assistant",
             content: data.response,
           });
+          if (saveError) console.error("Failed to save assistant message:", saveError);
         }
 
         if (data.tool_results && Array.isArray(data.tool_results)) {
