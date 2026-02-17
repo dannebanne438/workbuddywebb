@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-const CATEGORIES = ["Alla", "Pedagogisk dokumentation", "Aktiviteter", "Projekt", "Miljö", "Övrigt"];
+const CATEGORIES = ["Alla", "Pedagogisk dokumentation", "Fotodokumentation", "Aktiviteter", "Projekt", "Miljö", "Övrigt"];
 
 interface Photo {
   id: string;
