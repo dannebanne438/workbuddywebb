@@ -27,6 +27,7 @@ export function useWorkBuddyChat() {
   const [error, setError] = useState<string | null>(null);
   const [toolResults, setToolResults] = useState<ToolResult[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
   const messagesRef = useRef<Message[]>([]);
 
   // Keep ref in sync
@@ -51,6 +52,7 @@ export function useWorkBuddyChat() {
       messagesRef.current = loaded;
     }
     setConversationId(convId);
+    conversationIdRef.current = convId;
     setError(null);
     setToolResults([]);
   }, []);
@@ -59,6 +61,7 @@ export function useWorkBuddyChat() {
     setMessages([]);
     messagesRef.current = [];
     setConversationId(null);
+    conversationIdRef.current = null;
     setError(null);
     setToolResults([]);
   }, []);
@@ -82,8 +85,8 @@ export function useWorkBuddyChat() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error("Inte inloggad");
 
-      // Create conversation if needed
-      let activeConvId = conversationId;
+      // Use ref to get the latest conversationId
+      let activeConvId = conversationIdRef.current;
       if (!activeConvId) {
         const { data: conv } = await supabase
           .from("conversations")
@@ -97,6 +100,7 @@ export function useWorkBuddyChat() {
         if (conv) {
           activeConvId = conv.id;
           setConversationId(conv.id);
+          conversationIdRef.current = conv.id;
         }
       }
 
@@ -161,12 +165,13 @@ export function useWorkBuddyChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId]);
+  }, []); // No dependencies needed - uses refs
 
   const clearMessages = useCallback(() => {
     setMessages([]);
     messagesRef.current = [];
     setConversationId(null);
+    conversationIdRef.current = null;
     setError(null);
     setToolResults([]);
   }, []);
