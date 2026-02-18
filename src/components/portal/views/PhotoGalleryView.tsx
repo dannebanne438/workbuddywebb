@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Image, Upload, Download, Trash2, Filter, X } from "lucide-react";
+import { Image, Upload, Download, Trash2, Filter, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { sv } from "date-fns/locale";
 
 const CATEGORIES = ["Alla", "Pedagogisk dokumentation", "Fotodokumentation", "Aktiviteter", "Projekt", "Miljö", "Övrigt"];
 
@@ -21,6 +22,16 @@ interface Photo {
   uploaded_by_name: string | null;
   created_at: string;
 }
+
+const formatExactTime = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return format(date, "d MMM yyyy 'kl.' HH:mm:ss", { locale: sv });
+};
+
+const formatShortTime = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return format(date, "d MMM HH:mm", { locale: sv });
+};
 
 export function PhotoGalleryView() {
   const { activeWorkplace } = useWorkplace();
@@ -82,6 +93,25 @@ export function PhotoGalleryView() {
     toast.success("Bild borttagen");
     setSelectedPhoto(null);
     fetchPhotos();
+  };
+
+  const handleShareToTeamChat = async (photo: Photo) => {
+    if (!activeWorkplace?.id || !user) return;
+
+    const messageContent = `📸 *${photo.title || "Bild"}*\n${photo.image_url}`;
+
+    const { error } = await supabase.from("team_messages").insert({
+      workplace_id: activeWorkplace.id,
+      sender_id: user.id,
+      sender_name: profile?.full_name || profile?.email || "Användare",
+      content: messageContent,
+    });
+
+    if (error) {
+      toast.error("Kunde inte skicka till teamchatten");
+    } else {
+      toast.success("Bilden skickades till teamchatten!");
+    }
   };
 
   const filtered = filterCategory === "Alla"
@@ -158,7 +188,7 @@ export function PhotoGalleryView() {
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <p className="text-white text-sm font-medium truncate">{photo.title}</p>
-                  <p className="text-white/70 text-xs">{photo.uploaded_by_name}</p>
+                  <p className="text-white/70 text-xs">{formatShortTime(photo.created_at)}</p>
                 </div>
                 <Badge variant="outline" className="absolute top-2 left-2 text-[10px] bg-background/80">
                   {photo.category}
@@ -179,14 +209,19 @@ export function PhotoGalleryView() {
                 alt={selectedPhoto.title || "Bild"}
                 className="w-full max-h-[70vh] object-contain bg-black"
               />
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">{selectedPhoto.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedPhoto.uploaded_by_name} • {new Date(selectedPhoto.created_at).toLocaleDateString("sv-SE")}
-                  </p>
+              <div className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{selectedPhoto.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedPhoto.uploaded_by_name} • {formatExactTime(selectedPhoto.created_at)}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={() => handleShareToTeamChat(selectedPhoto)}>
+                    <Send className="h-4 w-4 mr-1" /> Skicka i teamchatt
+                  </Button>
                   <a href={selectedPhoto.image_url} target="_blank" rel="noopener noreferrer" download>
                     <Button variant="outline" size="sm">
                       <Download className="h-4 w-4 mr-1" /> Ladda ner
