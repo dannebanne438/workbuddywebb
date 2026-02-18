@@ -125,9 +125,16 @@ export function ChecklistsView() {
     return { completed, total: items.length, percent: Math.round((completed / items.length) * 100) };
   };
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   const filteredChecklists = checklists.filter((c) => {
     if (filter === "active") return c.status === "active" && !c.is_template;
-    if (filter === "completed") return c.status === "completed";
+    if (filter === "completed") {
+      if (c.status !== "completed") return false;
+      if (c.completed_at && new Date(c.completed_at) < thirtyDaysAgo) return false;
+      return true;
+    }
     if (filter === "templates") return c.is_template;
     return true;
   });
