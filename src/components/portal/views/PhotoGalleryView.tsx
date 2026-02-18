@@ -2,14 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Image, Upload, Download, Trash2, Filter, Send } from "lucide-react";
+import { Image, Upload, Download, Trash2, Filter, Send, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
+
+interface Colleague {
+  id: string;
+  full_name: string | null;
+  email: string;
+}
 
 const CATEGORIES = ["Alla", "Pedagogisk dokumentation", "Fotodokumentation", "Aktiviteter", "Projekt", "Miljö", "Övrigt"];
 
@@ -41,11 +48,26 @@ export function PhotoGalleryView() {
   const [uploading, setUploading] = useState(false);
   const [filterCategory, setFilterCategory] = useState("Alla");
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [colleagues, setColleagues] = useState<Colleague[]>([]);
+  const [dmPopoverOpen, setDmPopoverOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (activeWorkplace?.id) fetchPhotos();
+    if (activeWorkplace?.id) {
+      fetchPhotos();
+      fetchColleagues();
+    }
   }, [activeWorkplace?.id]);
+
+  const fetchColleagues = async () => {
+    if (!activeWorkplace?.id || !user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("workplace_id", activeWorkplace.id)
+      .neq("id", user.id);
+    if (data) setColleagues(data);
+  };
 
   const fetchPhotos = async () => {
     if (!activeWorkplace?.id) return;
@@ -93,6 +115,25 @@ export function PhotoGalleryView() {
     toast.success("Bild borttagen");
     setSelectedPhoto(null);
     fetchPhotos();
+  };
+
+  const handleShareToDM = async (photo: Photo, colleague: Colleague) => {
+    if (!activeWorkplace?.id || !user) return;
+    const messageContent = `📸 *${photo.title || "Bild"}*\n${photo.image_url}`;
+    const { error } = await supabase.from("direct_messages").insert({
+      workplace_id: activeWorkplace.id,
+      sender_id: user.id,
+      sender_name: profile?.full_name || profile?.email || "Användare",
+      recipient_id: colleague.id,
+      recipient_name: colleague.full_name || colleague.email,
+      content: messageContent,
+    });
+    if (error) {
+      toast.error("Kunde inte skicka bilden");
+    } else {
+      toast.success(`Bilden skickades till ${colleague.full_name || colleague.email}!`);
+      setDmPopoverOpen(false);
+    }
   };
 
   const handleShareToTeamChat = async (photo: Photo) => {
@@ -220,8 +261,33 @@ export function PhotoGalleryView() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" size="sm" onClick={() => handleShareToTeamChat(selectedPhoto)}>
-                    <Send className="h-4 w-4 mr-1" /> Skicka i teamchatt
+                    <Send className="h-4 w-4 mr-1" /> Teamchatt
                   </Button>
+                  <Popover open={dmPopoverOpen} onOpenChange={setDmPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <UserRound className="h-4 w-4 mr-1" /> Skicka privat
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2" align="start">
+                      <p className="text-xs font-medium text-muted-foreground px-2 py-1">Skicka till:</p>
+                      {colleagues.length === 0 ? (
+                        <p className="text-sm text-muted-foreground px-2 py-2">Inga kollegor</p>
+                      ) : (
+                        <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                          {colleagues.map((c) => (
+                            <button
+                              key={c.id}
+                              onClick={() => handleShareToDM(selectedPhoto, c)}
+                              className="w-full text-left px-2 py-1.5 rounded text-sm hover:bg-muted transition-colors truncate"
+                            >
+                              {c.full_name || c.email}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                   <a href={selectedPhoto.image_url} target="_blank" rel="noopener noreferrer" download>
                     <Button variant="outline" size="sm">
                       <Download className="h-4 w-4 mr-1" /> Ladda ner
