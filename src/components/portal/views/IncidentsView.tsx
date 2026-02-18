@@ -23,14 +23,12 @@ interface Incident {
 
 const SEVERITY_COLORS: Record<string, "destructive" | "secondary" | "default" | "outline"> = {
   critical: "destructive",
-  high: "destructive",
   medium: "secondary",
   low: "default",
 };
 
 const SEVERITY_LABELS: Record<string, string> = {
   critical: "Kritisk",
-  high: "Hög",
   medium: "Medium",
   low: "Låg",
 };

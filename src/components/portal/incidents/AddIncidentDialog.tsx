@@ -13,7 +13,6 @@ import { toast } from "sonner";
 const SEVERITY_OPTIONS = [
   { value: "low", label: "Låg" },
   { value: "medium", label: "Medium" },
-  { value: "high", label: "Hög" },
   { value: "critical", label: "Kritisk" },
 ];
 
