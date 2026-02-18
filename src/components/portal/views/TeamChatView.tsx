@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Send, MessageSquare, Users, Hash, Menu } from "lucide-react";
+import { Send, MessageSquare, Users, Hash, Menu, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import { sv } from "date-fns/locale";
 import { ChatChecklistCard, parseChecklistMessage } from "../checklists/ChatChecklistCard";
@@ -43,7 +44,7 @@ interface Colleague {
 type ChatMode = "group" | { recipientId: string; recipientName: string };
 
 export function TeamChatView() {
-  const { user, profile } = useAuth();
+  const { user, profile, isWorkplaceAdmin, isSuperAdmin } = useAuth();
   const { activeWorkplace } = useWorkplace();
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [chatMode, setChatMode] = useState<ChatMode>("group");
@@ -131,6 +132,18 @@ export function TeamChatView() {
         },
         (payload) => {
           setTeamMessages((prev) => [...prev, payload.new as TeamMessage]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "team_messages",
+          filter: `workplace_id=eq.${activeWorkplace.id}`,
+        },
+        (payload) => {
+          setTeamMessages((prev) => prev.filter((m) => m.id !== (payload.old as any).id));
         }
       )
       .subscribe();
@@ -275,6 +288,23 @@ export function TeamChatView() {
     if (isToday(date)) return "Idag";
     if (isYesterday(date)) return "Igår";
     return format(date, "EEEE d MMMM", { locale: sv });
+  };
+
+  const handleDeleteMessage = async (msg: TeamMessage | DirectMessage, type: "team" | "dm") => {
+    if (type === "team") {
+      const { error } = await supabase.from("team_messages").delete().eq("id", msg.id);
+      if (error) { toast.error("Kunde inte ta bort meddelandet"); return; }
+      setTeamMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    } else {
+      const { error } = await supabase.from("direct_messages").delete().eq("id", msg.id);
+      if (error) { toast.error("Kunde inte ta bort meddelandet"); return; }
+      setDirectMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    }
+    toast.success("Meddelande borttaget");
+  };
+
+  const canDeleteMessage = (msg: TeamMessage | DirectMessage) => {
+    return msg.sender_id === user?.id || isWorkplaceAdmin || isSuperAdmin;
   };
 
   const messages = chatMode === "group" ? teamMessages : directMessages;
@@ -461,7 +491,7 @@ export function TeamChatView() {
                       return (
                         <div
                           key={message.id}
-                          className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                          className={`flex gap-3 group ${isOwnMessage ? "flex-row-reverse" : ""}`}
                         >
                           {!isOwnMessage && (
                             <Avatar className="h-8 w-8 flex-shrink-0">
@@ -546,13 +576,23 @@ export function TeamChatView() {
                               );
                             })()}
                             
-                            <p
-                              className={`text-xs text-muted-foreground mt-1 ${
-                                isOwnMessage ? "text-right mr-1" : "ml-1"
-                              }`}
-                            >
-                              {formatMessageDate(message.created_at)}
-                            </p>
+                            <div className={`flex items-center gap-1 mt-1 ${isOwnMessage ? "justify-end mr-1" : "ml-1"}`}>
+                              <p className="text-xs text-muted-foreground">
+                                {formatMessageDate(message.created_at)}
+                              </p>
+                              {canDeleteMessage(message) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMessage(message, chatMode === "group" ? "team" : "dm");
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-0.5 rounded"
+                                  title="Ta bort meddelande"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
