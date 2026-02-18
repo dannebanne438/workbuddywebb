@@ -495,20 +495,56 @@ export function TeamChatView() {
                                 )}
                                 <ChatChecklistCard checklistId={parsed.checklistId} />
                               </div>
-                            ) : (
-                              // Regular message
-                              <div
-                                className={`rounded-2xl px-4 py-2 ${
-                                  isOwnMessage
-                                    ? "bg-primary text-primary-foreground rounded-br-md"
-                                    : "bg-muted rounded-bl-md"
-                                }`}
-                              >
-                                <p className="text-sm whitespace-pre-wrap break-words">
-                                  {message.content}
-                                </p>
-                              </div>
-                            )}
+                            ) : (() => {
+                              // Check if message contains an image URL
+                              const lines = message.content.split("\n");
+                              const imageUrl = lines.find(l => /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i.test(l.trim()) || l.trim().match(/\/storage\/v1\/object\/public\/photos\//));
+                              const textLines = lines.filter(l => l !== imageUrl);
+                              const textContent = textLines.join("\n").replace(/^\*|\*$/g, "").trim();
+
+                              if (imageUrl) {
+                                return (
+                                  <div className="space-y-2">
+                                    {textContent && (
+                                      <div
+                                        className={`rounded-2xl px-4 py-2 ${
+                                          isOwnMessage
+                                            ? "bg-primary text-primary-foreground rounded-br-md"
+                                            : "bg-muted rounded-bl-md"
+                                        }`}
+                                      >
+                                        <p className="text-sm whitespace-pre-wrap break-words">
+                                          {textContent.replace(/^📸\s*/, "📸 ")}
+                                        </p>
+                                      </div>
+                                    )}
+                                    <img
+                                      src={imageUrl.trim()}
+                                      alt="Delad bild"
+                                      className="rounded-xl max-w-[280px] max-h-[240px] object-cover border border-border cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(imageUrl.trim(), "_blank");
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  className={`rounded-2xl px-4 py-2 ${
+                                    isOwnMessage
+                                      ? "bg-primary text-primary-foreground rounded-br-md"
+                                      : "bg-muted rounded-bl-md"
+                                  }`}
+                                >
+                                  <p className="text-sm whitespace-pre-wrap break-words">
+                                    {message.content}
+                                  </p>
+                                </div>
+                              );
+                            })()}
                             
                             <p
                               className={`text-xs text-muted-foreground mt-1 ${
