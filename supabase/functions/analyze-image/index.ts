@@ -33,7 +33,7 @@ Svara ALLTID med ett JSON-objekt med denna struktur:
   "suggested_type": "announcement" eller "incident",
   "title": "Kort rubrik som beskriver bilden",
   "description": "Beskrivning av vad som syns i bilden, 1-3 meningar",
-  "severity": "low", "medium", "high" eller "critical" (bara för incidents),
+  "severity": "low", "medium" eller "critical" (bara för incidents),
   "category": "safety", "quality", "environment" eller "delay" (bara för incidents),
   "confidence": "high", "medium" eller "low"
 }
@@ -64,7 +64,7 @@ Regler:
                   suggested_type: { type: "string", enum: ["announcement", "incident"] },
                   title: { type: "string" },
                   description: { type: "string" },
-                  severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
+                  severity: { type: "string", enum: ["low", "medium", "critical"] },
                   category: { type: "string", enum: ["safety", "quality", "environment", "delay"] },
                   confidence: { type: "string", enum: ["high", "medium", "low"] }
                 },
