@@ -144,11 +144,6 @@ const Login = () => {
       setWorkplaceId(workplace.id);
       setWorkplaceName(`${workplace.name} (${workplace.company_name})`);
       
-      // Check if this is a presentation workplace
-      const upperCode = workplaceCode.toUpperCase();
-      if (upperCode === "WBPRESENTATION" || upperCode === "BYGGPRESENTATION") {
-        localStorage.setItem("wb_presentation_mode", "true");
-      }
       
       setStep("personal");
     } catch {
