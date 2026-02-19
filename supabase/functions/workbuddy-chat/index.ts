@@ -285,7 +285,7 @@ const tools = [
         properties: {
           title: { type: "string", description: "Short title of the incident" },
           description: { type: "string", description: "Detailed description" },
-          severity: { type: "string", description: "Severity: 'low', 'medium', 'high', 'critical'" },
+          severity: { type: "string", description: "Severity: 'low', 'medium', 'critical'" },
           category: { type: "string", description: "Category: 'safety', 'quality', 'environment', 'delay'" }
         },
         required: ["title", "severity", "category"]
@@ -302,23 +302,274 @@ const tools = [
         properties: {
           status: { type: "string", description: "Filter by status: 'open', 'investigating', 'resolved', 'closed' (optional)" },
           category: { type: "string", description: "Filter by category: 'safety', 'quality', 'environment', 'delay' (optional)" },
-          severity: { type: "string", description: "Filter by severity: 'low', 'medium', 'high', 'critical' (optional)" }
+          severity: { type: "string", description: "Filter by severity: 'low', 'medium', 'critical' (optional)" }
         }
       }
     }
-  }
+  },
 ];
+
+// ========== HQ SUPER ADMIN TOOLS ==========
+const superAdminTools = [
+  // Workplace management
+  {
+    type: "function",
+    function: {
+      name: "create_workplace",
+      description: "Create a new workplace. Only super_admin can use this.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Workplace name" },
+          company_name: { type: "string", description: "Company name" },
+          industry: { type: "string", description: "Industry (optional)" },
+          workplace_type: { type: "string", description: "Workplace type (optional)" },
+          workplace_code: { type: "string", description: "Custom workplace code (optional, auto-generated if not provided)" }
+        },
+        required: ["name", "company_name"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_workplaces",
+      description: "List all workplaces with basic stats (employee count). Only super_admin can use this.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_workplace_settings",
+      description: "Update workplace settings like hourly_rate, ob_rate, max_hours_per_week, min_rest_hours, custom_prompt. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          workplace_id: { type: "string", description: "Workplace UUID to update (use list_workplaces to find)" },
+          settings: {
+            type: "object",
+            description: "Key-value pairs to merge into settings, e.g. {hourly_rate: 280, ob_rate: 100}",
+          }
+        },
+        required: ["workplace_id", "settings"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "toggle_features",
+      description: "Enable or disable feature modules for a workplace. Available features: dashboard, team-chat, schedule, checklists, routines, announcements, incidents, certificates, employees, documents, photos. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          workplace_id: { type: "string", description: "Workplace UUID" },
+          enabled_features: {
+            type: "array",
+            items: { type: "string" },
+            description: "Array of feature IDs to enable. Features NOT in the list will be disabled."
+          }
+        },
+        required: ["workplace_id", "enabled_features"]
+      }
+    }
+  },
+  // User management
+  {
+    type: "function",
+    function: {
+      name: "create_user",
+      description: "Create a new user account and assign to a workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          email: { type: "string", description: "User email" },
+          password: { type: "string", description: "Initial password (min 6 chars)" },
+          full_name: { type: "string", description: "Full name" },
+          role: { type: "string", description: "Role: 'employee' or 'workplace_admin'" },
+          workplace_id: { type: "string", description: "Workplace UUID to assign the user to" }
+        },
+        required: ["email", "password", "full_name", "role", "workplace_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_users",
+      description: "List users/employees for a specific workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          workplace_id: { type: "string", description: "Workplace UUID (optional, defaults to current)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "change_user_role",
+      description: "Change a user's role. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "User UUID" },
+          new_role: { type: "string", description: "New role: 'employee' or 'workplace_admin'" },
+          workplace_id: { type: "string", description: "Workplace context for the role" }
+        },
+        required: ["user_id", "new_role", "workplace_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "reset_user_password",
+      description: "Reset a user's password. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "User UUID" },
+          new_password: { type: "string", description: "New password (min 6 chars)" }
+        },
+        required: ["user_id", "new_password"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "move_user_to_workplace",
+      description: "Move a user to a different workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "User UUID" },
+          new_workplace_id: { type: "string", description: "Target workplace UUID" }
+        },
+        required: ["user_id", "new_workplace_id"]
+      }
+    }
+  },
+  // System configuration
+  {
+    type: "function",
+    function: {
+      name: "update_ai_prompt",
+      description: "Update the custom AI prompt for a workplace. This changes how WorkBuddy behaves for that workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          workplace_id: { type: "string", description: "Workplace UUID" },
+          custom_prompt: { type: "string", description: "The new custom prompt text" }
+        },
+        required: ["workplace_id", "custom_prompt"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_demo_prompts",
+      description: "Create, update, or delete demo prompts for a workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", description: "'create', 'update', or 'delete'" },
+          workplace_id: { type: "string", description: "Workplace UUID" },
+          prompt_text: { type: "string", description: "Prompt text (for create/update)" },
+          category: { type: "string", description: "Category (optional)" },
+          prompt_id: { type: "string", description: "Prompt UUID (for update/delete)" }
+        },
+        required: ["action", "workplace_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_contacts",
+      description: "Create or delete contacts for a workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", description: "'create' or 'delete'" },
+          workplace_id: { type: "string", description: "Workplace UUID" },
+          name: { type: "string", description: "Contact name (for create)" },
+          role: { type: "string", description: "Contact role (for create)" },
+          phone: { type: "string", description: "Phone number (optional)" },
+          email: { type: "string", description: "Email (optional)" },
+          is_emergency: { type: "boolean", description: "Is emergency contact (optional)" },
+          contact_id: { type: "string", description: "Contact UUID (for delete)" }
+        },
+        required: ["action", "workplace_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_important_times",
+      description: "Create or delete important times for a workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", description: "'create' or 'delete'" },
+          workplace_id: { type: "string", description: "Workplace UUID" },
+          time_value: { type: "string", description: "Time value, e.g. '07:00' (for create)" },
+          description: { type: "string", description: "Description (for create)" },
+          time_id: { type: "string", description: "Time UUID (for delete)" }
+        },
+        required: ["action", "workplace_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "manage_invite_codes",
+      description: "Create or deactivate invite codes for a workplace. Only super_admin.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", description: "'create' or 'deactivate'" },
+          workplace_id: { type: "string", description: "Workplace UUID" },
+          name: { type: "string", description: "Invite code display name (for create)" },
+          code: { type: "string", description: "Custom code (for create, optional - auto-generated if not provided)" },
+          invite_code_id: { type: "string", description: "Invite code UUID (for deactivate)" }
+        },
+        required: ["action", "workplace_id"]
+      }
+    }
+  },
+];
+
+// ========== TOOL EXECUTION ==========
 
 async function executeToolCall(
   toolName: string,
   args: any,
   workplaceId: string,
   userId: string,
-  supabaseAdmin: any
+  supabaseAdmin: any,
+  isSuperAdmin: boolean
 ): Promise<{ success: boolean; message: string; data?: any }> {
   
+  // Guard: super admin only tools
+  const superAdminOnlyTools = [
+    "create_workplace", "list_workplaces", "update_workplace_settings", "toggle_features",
+    "create_user", "list_users", "change_user_role", "reset_user_password", "move_user_to_workplace",
+    "update_ai_prompt", "manage_demo_prompts", "manage_contacts", "manage_important_times", "manage_invite_codes"
+  ];
+  if (superAdminOnlyTools.includes(toolName) && !isSuperAdmin) {
+    return { success: false, message: "Denna åtgärd kräver super_admin-behörighet." };
+  }
+
   switch (toolName) {
-    // QUERY SCHEDULE (read-only, available to all users)
+    // ========== EXISTING TOOLS ==========
+
     case "query_schedule": {
       let query = supabaseAdmin
         .from("schedules")
@@ -336,10 +587,8 @@ async function executeToolCall(
       }
 
       const { data, error } = await query;
-
       if (error) return { success: false, message: error.message };
 
-      // Calculate total hours
       const totalHours = (data || []).reduce((sum: number, shift: { start_time: string; end_time: string }) => {
         const [startH, startM] = shift.start_time.split(":").map(Number);
         const [endH, endM] = shift.end_time.split(":").map(Number);
@@ -351,16 +600,10 @@ async function executeToolCall(
       return {
         success: true,
         message: `Hittade ${data?.length || 0} pass (totalt ${totalHours.toFixed(1)} timmar)`,
-        data: {
-          action: "query_schedule",
-          shifts: data || [],
-          total_shifts: data?.length || 0,
-          total_hours: totalHours
-        }
+        data: { action: "query_schedule", shifts: data || [], total_shifts: data?.length || 0, total_hours: totalHours }
       };
     }
 
-    // SCHEDULE OPERATIONS
     case "create_schedule": {
       const shiftsToInsert = args.shifts.map((shift: any) => ({
         workplace_id: workplaceId,
@@ -374,50 +617,23 @@ async function executeToolCall(
         is_approved: false,
       }));
 
-      const { data, error } = await supabaseAdmin
-        .from("schedules")
-        .insert(shiftsToInsert)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("schedules").insert(shiftsToInsert).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Skapade ${data.length} pass`, 
-        data: { action: "create_schedule", shifts: data }
-      };
+      return { success: true, message: `Skapade ${data.length} pass`, data: { action: "create_schedule", shifts: data } };
     }
 
     case "delete_schedule": {
-      let query = supabaseAdmin
-        .from("schedules")
-        .delete()
-        .eq("workplace_id", workplaceId)
-        .eq("shift_date", args.shift_date);
-
+      let query = supabaseAdmin.from("schedules").delete().eq("workplace_id", workplaceId).eq("shift_date", args.shift_date);
       if (!args.delete_all_for_date && args.user_name) {
         query = query.ilike("user_name", `%${args.user_name}%`);
       }
-
       const { data, error } = await query.select();
-
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Tog bort ${data?.length || 0} pass`,
-        data: { action: "delete_schedule", deleted_count: data?.length || 0 }
-      };
+      return { success: true, message: `Tog bort ${data?.length || 0} pass`, data: { action: "delete_schedule", deleted_count: data?.length || 0 } };
     }
 
     case "update_schedule": {
-      const { data: existing } = await supabaseAdmin
-        .from("schedules")
-        .select("id")
-        .eq("workplace_id", workplaceId)
-        .eq("shift_date", args.shift_date)
-        .ilike("user_name", `%${args.user_name}%`)
-        .limit(1)
-        .single();
-
+      const { data: existing } = await supabaseAdmin.from("schedules").select("id").eq("workplace_id", workplaceId).eq("shift_date", args.shift_date).ilike("user_name", `%${args.user_name}%`).limit(1).single();
       if (!existing) return { success: false, message: "Hittade inget pass att uppdatera" };
 
       const updates: any = {};
@@ -427,237 +643,95 @@ async function executeToolCall(
       if (args.new_role) updates.role = args.new_role;
       if (args.new_date) updates.shift_date = args.new_date;
 
-      const { data, error } = await supabaseAdmin
-        .from("schedules")
-        .update(updates)
-        .eq("id", existing.id)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("schedules").update(updates).eq("id", existing.id).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: "Uppdaterade passet",
-        data: { action: "update_schedule", shift: data?.[0] }
-      };
+      return { success: true, message: "Uppdaterade passet", data: { action: "update_schedule", shift: data?.[0] } };
     }
 
-    // CHECKLIST OPERATIONS
     case "create_checklist": {
-      const { data, error } = await supabaseAdmin
-        .from("checklists")
-        .insert({
-          workplace_id: workplaceId,
-          title: args.title,
-          description: args.description || null,
-          items: args.items.map((item: any) => ({ text: item.text, checked: item.checked || false })),
-          is_template: args.is_template || false,
-          for_date: args.for_date || null,
-          created_by: userId,
-        })
-        .select()
-        .single();
-
+      const { data, error } = await supabaseAdmin.from("checklists").insert({
+        workplace_id: workplaceId, title: args.title, description: args.description || null,
+        items: args.items.map((item: any) => ({ text: item.text, checked: item.checked || false })),
+        is_template: args.is_template || false, for_date: args.for_date || null, created_by: userId,
+      }).select().single();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Skapade checklista "${args.title}"`,
-        data: { action: "create_checklist", checklist: data }
-      };
+      return { success: true, message: `Skapade checklista "${args.title}"`, data: { action: "create_checklist", checklist: data } };
     }
 
     case "update_checklist": {
-      const { data: existing } = await supabaseAdmin
-        .from("checklists")
-        .select("id")
-        .eq("workplace_id", workplaceId)
-        .ilike("title", `%${args.title}%`)
-        .limit(1)
-        .single();
-
+      const { data: existing } = await supabaseAdmin.from("checklists").select("id").eq("workplace_id", workplaceId).ilike("title", `%${args.title}%`).limit(1).single();
       if (!existing) return { success: false, message: "Hittade ingen checklista" };
-
       const updates: any = {};
       if (args.new_title) updates.title = args.new_title;
       if (args.new_description) updates.description = args.new_description;
       if (args.items) updates.items = args.items.map((item: any) => ({ text: item.text, checked: item.checked || false }));
-
-      const { data, error } = await supabaseAdmin
-        .from("checklists")
-        .update(updates)
-        .eq("id", existing.id)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("checklists").update(updates).eq("id", existing.id).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Uppdaterade checklistan`,
-        data: { action: "update_checklist", checklist: data?.[0] }
-      };
+      return { success: true, message: `Uppdaterade checklistan`, data: { action: "update_checklist", checklist: data?.[0] } };
     }
 
     case "delete_checklist": {
-      const { data, error } = await supabaseAdmin
-        .from("checklists")
-        .delete()
-        .eq("workplace_id", workplaceId)
-        .ilike("title", `%${args.title}%`)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("checklists").delete().eq("workplace_id", workplaceId).ilike("title", `%${args.title}%`).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Tog bort ${data?.length || 0} checklista`,
-        data: { action: "delete_checklist", deleted_count: data?.length || 0 }
-      };
+      return { success: true, message: `Tog bort ${data?.length || 0} checklista`, data: { action: "delete_checklist", deleted_count: data?.length || 0 } };
     }
 
-    // ROUTINE OPERATIONS
     case "create_routine": {
-      const { data, error } = await supabaseAdmin
-        .from("routines")
-        .insert({
-          workplace_id: workplaceId,
-          title: args.title,
-          content: args.content,
-          category: args.category || null,
-          created_by: userId,
-        })
-        .select()
-        .single();
-
+      const { data, error } = await supabaseAdmin.from("routines").insert({
+        workplace_id: workplaceId, title: args.title, content: args.content, category: args.category || null, created_by: userId,
+      }).select().single();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Skapade rutin "${args.title}"`,
-        data: { action: "create_routine", routine: data }
-      };
+      return { success: true, message: `Skapade rutin "${args.title}"`, data: { action: "create_routine", routine: data } };
     }
 
     case "update_routine": {
-      const { data: existing } = await supabaseAdmin
-        .from("routines")
-        .select("id")
-        .eq("workplace_id", workplaceId)
-        .ilike("title", `%${args.title}%`)
-        .limit(1)
-        .single();
-
+      const { data: existing } = await supabaseAdmin.from("routines").select("id").eq("workplace_id", workplaceId).ilike("title", `%${args.title}%`).limit(1).single();
       if (!existing) return { success: false, message: "Hittade ingen rutin" };
-
       const updates: any = {};
       if (args.new_title) updates.title = args.new_title;
       if (args.new_content) updates.content = args.new_content;
       if (args.new_category) updates.category = args.new_category;
-
-      const { data, error } = await supabaseAdmin
-        .from("routines")
-        .update(updates)
-        .eq("id", existing.id)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("routines").update(updates).eq("id", existing.id).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Uppdaterade rutinen`,
-        data: { action: "update_routine", routine: data?.[0] }
-      };
+      return { success: true, message: `Uppdaterade rutinen`, data: { action: "update_routine", routine: data?.[0] } };
     }
 
     case "delete_routine": {
-      const { data, error } = await supabaseAdmin
-        .from("routines")
-        .delete()
-        .eq("workplace_id", workplaceId)
-        .ilike("title", `%${args.title}%`)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("routines").delete().eq("workplace_id", workplaceId).ilike("title", `%${args.title}%`).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Tog bort ${data?.length || 0} rutin`,
-        data: { action: "delete_routine", deleted_count: data?.length || 0 }
-      };
+      return { success: true, message: `Tog bort ${data?.length || 0} rutin`, data: { action: "delete_routine", deleted_count: data?.length || 0 } };
     }
 
-    // ANNOUNCEMENT OPERATIONS
     case "create_announcement": {
-      const { data, error } = await supabaseAdmin
-        .from("announcements")
-        .insert({
-          workplace_id: workplaceId,
-          title: args.title,
-          content: args.content,
-          is_pinned: args.is_pinned || false,
-          created_by: userId,
-        })
-        .select()
-        .single();
-
+      const { data, error } = await supabaseAdmin.from("announcements").insert({
+        workplace_id: workplaceId, title: args.title, content: args.content, is_pinned: args.is_pinned || false, created_by: userId,
+      }).select().single();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Skapade nyhet "${args.title}"`,
-        data: { action: "create_announcement", announcement: data }
-      };
+      return { success: true, message: `Skapade nyhet "${args.title}"`, data: { action: "create_announcement", announcement: data } };
     }
 
     case "update_announcement": {
-      const { data: existing } = await supabaseAdmin
-        .from("announcements")
-        .select("id")
-        .eq("workplace_id", workplaceId)
-        .ilike("title", `%${args.title}%`)
-        .limit(1)
-        .single();
-
+      const { data: existing } = await supabaseAdmin.from("announcements").select("id").eq("workplace_id", workplaceId).ilike("title", `%${args.title}%`).limit(1).single();
       if (!existing) return { success: false, message: "Hittade ingen nyhet" };
-
       const updates: any = {};
       if (args.new_title) updates.title = args.new_title;
       if (args.new_content) updates.content = args.new_content;
       if (typeof args.is_pinned === "boolean") updates.is_pinned = args.is_pinned;
-
-      const { data, error } = await supabaseAdmin
-        .from("announcements")
-        .update(updates)
-        .eq("id", existing.id)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("announcements").update(updates).eq("id", existing.id).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Uppdaterade nyheten`,
-        data: { action: "update_announcement", announcement: data?.[0] }
-      };
+      return { success: true, message: `Uppdaterade nyheten`, data: { action: "update_announcement", announcement: data?.[0] } };
     }
 
     case "delete_announcement": {
-      const { data, error } = await supabaseAdmin
-        .from("announcements")
-        .delete()
-        .eq("workplace_id", workplaceId)
-        .ilike("title", `%${args.title}%`)
-        .select();
-
+      const { data, error } = await supabaseAdmin.from("announcements").delete().eq("workplace_id", workplaceId).ilike("title", `%${args.title}%`).select();
       if (error) return { success: false, message: error.message };
-      return { 
-        success: true, 
-        message: `Tog bort ${data?.length || 0} nyhet`,
-        data: { action: "delete_announcement", deleted_count: data?.length || 0 }
-      };
+      return { success: true, message: `Tog bort ${data?.length || 0} nyhet`, data: { action: "delete_announcement", deleted_count: data?.length || 0 } };
     }
 
-    default:
-      return { success: false, message: `Unknown tool: ${toolName}` };
-
-    // CERTIFICATE OPERATIONS
     case "query_certificates": {
-      let query = supabaseAdmin
-        .from("certificates")
+      let query = supabaseAdmin.from("certificates")
         .select("user_name, certificate_type, issued_date, expiry_date, issuer, certificate_number, status, notes")
-        .eq("workplace_id", workplaceId)
-        .order("expiry_date", { ascending: true });
-
+        .eq("workplace_id", workplaceId).order("expiry_date", { ascending: true });
       if (args.user_name) query = query.ilike("user_name", `%${args.user_name}%`);
       if (args.certificate_type) query = query.ilike("certificate_type", `%${args.certificate_type}%`);
       if (args.status) query = query.eq("status", args.status);
@@ -665,67 +739,244 @@ async function executeToolCall(
         const futureDate = new Date(Date.now() + args.expiring_within_days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
         query = query.lte("expiry_date", futureDate);
       }
-
       const { data, error } = await query;
       if (error) return { success: false, message: error.message };
-
-      return {
-        success: true,
-        message: `Hittade ${data?.length || 0} certifikat`,
-        data: { action: "query_certificates", certificates: data || [], total: data?.length || 0 }
-      };
+      return { success: true, message: `Hittade ${data?.length || 0} certifikat`, data: { action: "query_certificates", certificates: data || [], total: data?.length || 0 } };
     }
 
     case "create_incident": {
-      // Get reporter name
-      const { data: reporter } = await supabaseAdmin
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", userId)
-        .single();
-
-      const { data, error } = await supabaseAdmin
-        .from("incidents")
-        .insert({
-          workplace_id: workplaceId,
-          title: args.title,
-          description: args.description || null,
-          severity: args.severity || "medium",
-          category: args.category || "safety",
-          reported_by: userId,
-          reported_by_name: reporter?.full_name || reporter?.email || "Okänd",
-        })
-        .select()
-        .single();
-
+      const { data: reporter } = await supabaseAdmin.from("profiles").select("full_name, email").eq("id", userId).single();
+      const { data, error } = await supabaseAdmin.from("incidents").insert({
+        workplace_id: workplaceId, title: args.title, description: args.description || null,
+        severity: args.severity || "medium", category: args.category || "safety",
+        reported_by: userId, reported_by_name: reporter?.full_name || reporter?.email || "Okänd",
+      }).select().single();
       if (error) return { success: false, message: error.message };
-      return {
-        success: true,
-        message: `Avvikelse rapporterad: "${args.title}"`,
-        data: { action: "create_incident", incident: data }
-      };
+      return { success: true, message: `Avvikelse rapporterad: "${args.title}"`, data: { action: "create_incident", incident: data } };
     }
 
     case "query_incidents": {
-      let query = supabaseAdmin
-        .from("incidents")
+      let query = supabaseAdmin.from("incidents")
         .select("title, description, severity, category, reported_by_name, status, created_at")
-        .eq("workplace_id", workplaceId)
-        .order("created_at", { ascending: false });
-
+        .eq("workplace_id", workplaceId).order("created_at", { ascending: false });
       if (args.status) query = query.eq("status", args.status);
       if (args.category) query = query.eq("category", args.category);
       if (args.severity) query = query.eq("severity", args.severity);
-
       const { data, error } = await query.limit(20);
       if (error) return { success: false, message: error.message };
-
-      return {
-        success: true,
-        message: `Hittade ${data?.length || 0} avvikelser`,
-        data: { action: "query_incidents", incidents: data || [], total: data?.length || 0 }
-      };
+      return { success: true, message: `Hittade ${data?.length || 0} avvikelser`, data: { action: "query_incidents", incidents: data || [], total: data?.length || 0 } };
     }
+
+    // ========== HQ SUPER ADMIN TOOLS ==========
+
+    case "create_workplace": {
+      const code = args.workplace_code?.trim().toUpperCase() ||
+        args.name.replace(/[^a-zA-Z0-9]/g, "").substring(0, 6).toUpperCase() +
+        Math.random().toString(36).substring(2, 5).toUpperCase();
+
+      const { data: existing } = await supabaseAdmin.from("workplaces").select("id").eq("workplace_code", code).maybeSingle();
+      if (existing) return { success: false, message: "Platskoden finns redan, välj en annan" };
+
+      const { data, error } = await supabaseAdmin.from("workplaces").insert({
+        name: args.name.trim(), company_name: args.company_name.trim(),
+        industry: args.industry?.trim() || null, workplace_type: args.workplace_type?.trim() || null,
+        workplace_code: code,
+      }).select().single();
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: `Skapade arbetsplats "${data.name}" med kod ${data.workplace_code}`, data: { action: "create_workplace", workplace: data } };
+    }
+
+    case "list_workplaces": {
+      const { data: workplaces, error } = await supabaseAdmin.from("workplaces").select("id, name, company_name, industry, workplace_type, workplace_code, settings, created_at").order("name");
+      if (error) return { success: false, message: error.message };
+
+      // Get employee counts per workplace
+      const { data: profiles } = await supabaseAdmin.from("profiles").select("workplace_id");
+      const counts: Record<string, number> = {};
+      (profiles || []).forEach((p: any) => { if (p.workplace_id) counts[p.workplace_id] = (counts[p.workplace_id] || 0) + 1; });
+
+      const enriched = (workplaces || []).map((w: any) => ({ ...w, employee_count: counts[w.id] || 0 }));
+      return { success: true, message: `Hittade ${enriched.length} arbetsplatser`, data: { action: "list_workplaces", workplaces: enriched } };
+    }
+
+    case "update_workplace_settings": {
+      const wpId = args.workplace_id;
+      const { data: current } = await supabaseAdmin.from("workplaces").select("settings").eq("id", wpId).single();
+      if (!current) return { success: false, message: "Arbetsplatsen hittades inte" };
+
+      const merged = { ...(current.settings as Record<string, unknown> || {}), ...args.settings };
+      const { error } = await supabaseAdmin.from("workplaces").update({ settings: merged }).eq("id", wpId);
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: "Inställningar uppdaterade", data: { action: "update_workplace_settings", settings: merged } };
+    }
+
+    case "toggle_features": {
+      const wpId = args.workplace_id;
+      const { data: current } = await supabaseAdmin.from("workplaces").select("settings").eq("id", wpId).single();
+      if (!current) return { success: false, message: "Arbetsplatsen hittades inte" };
+
+      const merged = { ...(current.settings as Record<string, unknown> || {}), enabled_features: args.enabled_features };
+      const { error } = await supabaseAdmin.from("workplaces").update({ settings: merged }).eq("id", wpId);
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: `Funktioner uppdaterade: ${args.enabled_features.join(", ")}`, data: { action: "toggle_features", enabled_features: args.enabled_features } };
+    }
+
+    case "create_user": {
+      if (args.password.length < 6) return { success: false, message: "Lösenordet måste vara minst 6 tecken" };
+
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: args.email,
+        password: args.password,
+        email_confirm: true,
+        user_metadata: { full_name: args.full_name },
+      });
+      if (authError) return { success: false, message: authError.message };
+
+      // Create profile
+      await supabaseAdmin.from("profiles").insert({
+        id: authUser.user.id, email: args.email, full_name: args.full_name, workplace_id: args.workplace_id,
+      });
+
+      // Assign role
+      const role = args.role === "workplace_admin" ? "workplace_admin" : "employee";
+      await supabaseAdmin.from("user_roles").insert({
+        user_id: authUser.user.id, role, workplace_id: args.workplace_id,
+      });
+
+      return { success: true, message: `Skapade användare ${args.full_name} (${args.email}) som ${role}`, data: { action: "create_user", user_id: authUser.user.id, email: args.email, role } };
+    }
+
+    case "list_users": {
+      const targetWp = args.workplace_id || workplaceId;
+      const { data: users, error } = await supabaseAdmin.from("profiles").select("id, email, full_name, workplace_id").eq("workplace_id", targetWp);
+      if (error) return { success: false, message: error.message };
+
+      // Get roles
+      const userIds = (users || []).map((u: any) => u.id);
+      const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", userIds);
+      const roleMap: Record<string, string[]> = {};
+      (roles || []).forEach((r: any) => { if (!roleMap[r.user_id]) roleMap[r.user_id] = []; roleMap[r.user_id].push(r.role); });
+
+      const enriched = (users || []).map((u: any) => ({ ...u, roles: roleMap[u.id] || ["employee"] }));
+      return { success: true, message: `Hittade ${enriched.length} användare`, data: { action: "list_users", users: enriched } };
+    }
+
+    case "change_user_role": {
+      // Remove old non-super_admin roles for the workplace
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", args.user_id).eq("workplace_id", args.workplace_id).neq("role", "super_admin");
+
+      // Insert new role
+      const { error } = await supabaseAdmin.from("user_roles").insert({
+        user_id: args.user_id, role: args.new_role, workplace_id: args.workplace_id,
+      });
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: `Ändrade roll till ${args.new_role}`, data: { action: "change_user_role", user_id: args.user_id, new_role: args.new_role } };
+    }
+
+    case "reset_user_password": {
+      if (args.new_password.length < 6) return { success: false, message: "Lösenordet måste vara minst 6 tecken" };
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(args.user_id, { password: args.new_password });
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: "Lösenordet har återställts", data: { action: "reset_user_password" } };
+    }
+
+    case "move_user_to_workplace": {
+      // Verify target workplace exists
+      const { data: targetWp } = await supabaseAdmin.from("workplaces").select("id, name").eq("id", args.new_workplace_id).single();
+      if (!targetWp) return { success: false, message: "Målarbetsplatsen hittades inte" };
+
+      // Update profile
+      const { error: profileErr } = await supabaseAdmin.from("profiles").update({ workplace_id: args.new_workplace_id }).eq("id", args.user_id);
+      if (profileErr) return { success: false, message: profileErr.message };
+
+      // Update user_roles workplace_id (non-super_admin roles)
+      await supabaseAdmin.from("user_roles").update({ workplace_id: args.new_workplace_id }).eq("user_id", args.user_id).neq("role", "super_admin");
+
+      return { success: true, message: `Flyttade användaren till ${targetWp.name}`, data: { action: "move_user_to_workplace", new_workplace: targetWp.name } };
+    }
+
+    case "update_ai_prompt": {
+      const wpId = args.workplace_id;
+      const { data: current } = await supabaseAdmin.from("workplaces").select("settings").eq("id", wpId).single();
+      if (!current) return { success: false, message: "Arbetsplatsen hittades inte" };
+
+      const merged = { ...(current.settings as Record<string, unknown> || {}), custom_prompt: args.custom_prompt };
+      const { error } = await supabaseAdmin.from("workplaces").update({ settings: merged }).eq("id", wpId);
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: "AI-prompt uppdaterad", data: { action: "update_ai_prompt" } };
+    }
+
+    case "manage_demo_prompts": {
+      if (args.action === "create") {
+        const { data, error } = await supabaseAdmin.from("demo_prompts").insert({
+          workplace_id: args.workplace_id, prompt_text: args.prompt_text, category: args.category || null,
+        }).select().single();
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: `Skapade demoprompt`, data: { action: "manage_demo_prompts", prompt: data } };
+      } else if (args.action === "update" && args.prompt_id) {
+        const updates: any = {};
+        if (args.prompt_text) updates.prompt_text = args.prompt_text;
+        if (args.category !== undefined) updates.category = args.category;
+        const { error } = await supabaseAdmin.from("demo_prompts").update(updates).eq("id", args.prompt_id);
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: "Demoprompt uppdaterad", data: { action: "manage_demo_prompts" } };
+      } else if (args.action === "delete" && args.prompt_id) {
+        const { error } = await supabaseAdmin.from("demo_prompts").delete().eq("id", args.prompt_id);
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: "Demoprompt borttagen", data: { action: "manage_demo_prompts" } };
+      }
+      return { success: false, message: "Ogiltigt action eller saknar prompt_id" };
+    }
+
+    case "manage_contacts": {
+      if (args.action === "create") {
+        const { data, error } = await supabaseAdmin.from("contacts").insert({
+          workplace_id: args.workplace_id, name: args.name, role: args.role || null,
+          phone: args.phone || null, email: args.email || null, is_emergency: args.is_emergency || false,
+        }).select().single();
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: `Skapade kontakt "${args.name}"`, data: { action: "manage_contacts", contact: data } };
+      } else if (args.action === "delete" && args.contact_id) {
+        const { error } = await supabaseAdmin.from("contacts").delete().eq("id", args.contact_id);
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: "Kontakt borttagen", data: { action: "manage_contacts" } };
+      }
+      return { success: false, message: "Ogiltigt action eller saknar contact_id" };
+    }
+
+    case "manage_important_times": {
+      if (args.action === "create") {
+        const { data, error } = await supabaseAdmin.from("important_times").insert({
+          workplace_id: args.workplace_id, time_value: args.time_value, description: args.description,
+        }).select().single();
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: `Lade till viktig tid: ${args.time_value}`, data: { action: "manage_important_times", time: data } };
+      } else if (args.action === "delete" && args.time_id) {
+        const { error } = await supabaseAdmin.from("important_times").delete().eq("id", args.time_id);
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: "Viktig tid borttagen", data: { action: "manage_important_times" } };
+      }
+      return { success: false, message: "Ogiltigt action eller saknar time_id" };
+    }
+
+    case "manage_invite_codes": {
+      if (args.action === "create") {
+        const code = args.code?.trim().toUpperCase() || Math.random().toString(36).substring(2, 8).toUpperCase();
+        const { data, error } = await supabaseAdmin.from("invite_codes").insert({
+          workplace_id: args.workplace_id, code, name: args.name || code, created_by: userId,
+        }).select().single();
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: `Skapade inbjudningskod: ${code}`, data: { action: "manage_invite_codes", invite_code: data } };
+      } else if (args.action === "deactivate" && args.invite_code_id) {
+        const { error } = await supabaseAdmin.from("invite_codes").update({ status: "paused" }).eq("id", args.invite_code_id);
+        if (error) return { success: false, message: error.message };
+        return { success: true, message: "Inbjudningskod inaktiverad", data: { action: "manage_invite_codes" } };
+      }
+      return { success: false, message: "Ogiltigt action eller saknar invite_code_id" };
+    }
+
+    default:
+      return { success: false, message: `Okänt verktyg: ${toolName}` };
   }
 }
 
@@ -741,9 +992,10 @@ function generateByggSystemPrompt(
   isAdmin: boolean,
   today: string,
   certificates: any[],
-  incidents: any[]
+  incidents: any[],
+  isSuperAdmin: boolean,
+  allWorkplaces?: any[]
 ): string {
-  // Extract projects from settings if available
   const projects = workplace?.settings?.projects || [];
   
   const projectsInfo = projects.length > 0 
@@ -755,11 +1007,46 @@ function generateByggSystemPrompt(
       }).join("\n")
     : "Inga objekt/projekt registrerade.";
 
+  const superAdminSection = isSuperAdmin ? `
+
+HQ SUPER ADMIN VERKTYG (kräver bekräftelse):
+Du har tillgång till kraftfulla administrationsverktyg:
+
+ARBETSPLATSHANTERING:
+  • create_workplace - Skapa ny arbetsplats
+  • list_workplaces - Lista alla arbetsplatser med statistik
+  • update_workplace_settings - Ändra inställningar (timlön, OB, max timmar etc.)
+  • toggle_features - Slå av/på moduler (schema, certifikat, teamchatt etc.)
+
+ANVÄNDARHANTERING:
+  • create_user - Skapa ny användare (e-post, lösenord, namn, roll, arbetsplats)
+  • list_users - Lista personal per arbetsplats
+  • change_user_role - Ändra roll (employee/workplace_admin)
+  • reset_user_password - Återställa lösenord
+  • move_user_to_workplace - Flytta användare mellan arbetsplatser
+
+SYSTEMKONFIGURATION:
+  • update_ai_prompt - Ändra arbetsplatsens AI-prompt
+  • manage_demo_prompts - Skapa/redigera/ta bort demoprompter
+  • manage_contacts - Lägga till/ta bort kontakter
+  • manage_important_times - Ändra viktiga tider
+  • manage_invite_codes - Skapa/inaktivera inbjudningskoder
+
+${allWorkplaces && allWorkplaces.length > 0 ? `ALLA ARBETSPLATSER:
+${allWorkplaces.map((w: any) => `  • "${w.name}" (${w.company_name}) - ID: ${w.id} - Kod: ${w.workplace_code}`).join("\n")}` : ""}
+
+VIKTIGT FÖR HQ-VERKTYG:
+- Fråga ALLTID om bekräftelse innan du utför HQ-åtgärder
+- Vid create_user: föreslå alltid ett starkt lösenord
+- Vid move_user: informera om att detta påverkar användarens åtkomst
+- Vid toggle_features: lista tydligt vilka moduler som slås av/på
+` : "";
+
   return `Du är WorkBuddy, en platsbaserad digital kollega för byggarbetsplatser. Du arbetar alltid inom den aktuella arbetsplatsens och aktuella objektets data.
 
 DAGENS DATUM: ${today}
 ARBETSPLATS: ${workplace?.name} (${workplace?.company_name})
-ANVÄNDARROLL: ${isAdmin ? "ADMIN/PLATSCHEF (kan skapa, redigera och ta bort innehåll)" : "ANSTÄLLD (endast läsbehörighet)"}
+ANVÄNDARROLL: ${isSuperAdmin ? "SUPER ADMIN (full kontroll över hela systemet)" : isAdmin ? "ADMIN/PLATSCHEF (kan skapa, redigera och ta bort innehåll)" : "ANSTÄLLD (endast läsbehörighet)"}
 
 MÅL:
 1) Minska avbrott för platschef: svara direkt på frågor om schema, rutiner, säkerhet, kontaktvägar och dagens plan.
@@ -845,7 +1132,7 @@ VIKTIGT - BEKRÄFTELSE KRÄVS:
 ` : `- Användaren har inte admin-behörighet. Svara på frågor men gör inga ändringar.
 - Användaren kan fråga om certifikat (query_certificates) och avvikelser (query_incidents).
 - Användaren kan rapportera avvikelser (create_incident).`}
-
+${superAdminSection}
 OUTPUTFORMAT:
 1) Kort svar (1–2 meningar)
 2) Detaljer i punktlista
@@ -903,6 +1190,7 @@ serve(async (req) => {
       .eq("user_id", userId);
 
     const isAdmin = userRoles?.some(r => r.role === "super_admin" || r.role === "workplace_admin");
+    const isSuperAdmin = userRoles?.some(r => r.role === "super_admin") || false;
 
     // Get request body
     const { messages, workplaceId: requestedWorkplaceId } = await req.json();
@@ -915,11 +1203,9 @@ serve(async (req) => {
       .single();
 
     let workplaceId = profile?.workplace_id;
-    const isSuperAdmin = userRoles?.some(r => r.role === "super_admin");
 
     // Super admin can specify a different workplace
     if (isSuperAdmin && requestedWorkplaceId) {
-      // Verify the workplace exists
       const { data: targetWorkplace } = await supabase
         .from("workplaces")
         .select("id")
@@ -951,6 +1237,13 @@ serve(async (req) => {
       });
     }
 
+    // Fetch all workplaces for super admin context
+    let allWorkplaces: any[] = [];
+    if (isSuperAdmin) {
+      const { data: wps } = await supabaseAdmin.from("workplaces").select("id, name, company_name, workplace_code").order("name");
+      allWorkplaces = wps || [];
+    }
+
     // Get workplace data for context
     const [workplaceRes, routinesRes, timesRes, contactsRes, schedulesRes, employeesRes, checklistsRes, announcementsRes, certificatesRes, incidentsRes] = await Promise.all([
       supabase.from("workplaces").select("*").eq("id", workplaceId).single(),
@@ -978,7 +1271,6 @@ serve(async (req) => {
 
     const today = new Date().toISOString().split("T")[0];
 
-    // Use the new bygg-specific system prompt generator
     const systemPrompt = generateByggSystemPrompt(
       workplace,
       employees || [],
@@ -991,23 +1283,32 @@ serve(async (req) => {
       isAdmin || false,
       today,
       certificates || [],
-      incidents || []
+      incidents || [],
+      isSuperAdmin,
+      allWorkplaces
     );
 
-    // messages were already extracted at line 749
-
-    // First call with tools
+    // Build tool set based on role
     const readOnlyTools = tools.filter(t => 
       ["query_schedule", "query_certificates", "query_incidents", "create_incident"].includes(t.function.name)
     );
     
+    let activeTools;
+    if (isSuperAdmin) {
+      activeTools = [...tools, ...superAdminTools];
+    } else if (isAdmin) {
+      activeTools = tools;
+    } else {
+      activeTools = readOnlyTools;
+    }
+
     const aiPayload: any = {
       model: "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
       ],
-      tools: isAdmin ? tools : readOnlyTools,
+      tools: activeTools,
       tool_choice: "auto",
     };
 
@@ -1023,21 +1324,18 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "AI service error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -1055,7 +1353,8 @@ serve(async (req) => {
           args,
           workplaceId,
           userId,
-          supabaseAdmin
+          supabaseAdmin,
+          isSuperAdmin
         );
         toolResults.push({
           tool_call_id: toolCall.id,
@@ -1094,7 +1393,6 @@ serve(async (req) => {
         finalContent = followUp.choices?.[0]?.message?.content || finalContent;
       }
 
-      // Aggregate tool results for frontend
       const aggregatedResults = toolResults.map(tr => tr.result.data).filter(Boolean);
       
       return new Response(JSON.stringify({ 
