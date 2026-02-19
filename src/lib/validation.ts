@@ -4,7 +4,7 @@ export const workplaceCodeSchema = z
   .string()
   .min(1, "Platskod krävs")
   .max(20, "Platskod får vara max 20 tecken")
-  .regex(/^[A-Z0-9-]+$/i, "Platskod får endast innehålla bokstäver, siffror och bindestreck")
+  .regex(/^[A-ZÅÄÖa-zåäö0-9-]+$/i, "Platskod får endast innehålla bokstäver, siffror och bindestreck")
   .transform((val) => val.toUpperCase());
 
 export const emailSchema = z
