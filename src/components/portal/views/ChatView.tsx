@@ -25,6 +25,17 @@ import {
   MessageSquare,
   History,
   X,
+  Building2,
+  Users,
+  Settings,
+  Key,
+  Shield,
+  UserPlus,
+  ArrowRightLeft,
+  Clock,
+  Contact,
+  Ticket,
+  Bot,
 } from "lucide-react";
 
 interface DemoPrompt {
@@ -53,6 +64,21 @@ const actionIcons: Record<string, { icon: typeof Calendar; label: string; color:
   create_announcement: { icon: Bell, label: "Nyhet publicerad", color: "text-accent" },
   update_announcement: { icon: Pencil, label: "Nyhet uppdaterad", color: "text-blue-500" },
   delete_announcement: { icon: Trash, label: "Nyhet borttagen", color: "text-destructive" },
+  // HQ Super Admin actions
+  create_workplace: { icon: Building2, label: "Arbetsplats skapad", color: "text-accent" },
+  list_workplaces: { icon: Building2, label: "Arbetsplatser listade", color: "text-blue-500" },
+  update_workplace_settings: { icon: Settings, label: "Inställningar uppdaterade", color: "text-blue-500" },
+  toggle_features: { icon: Settings, label: "Funktioner uppdaterade", color: "text-blue-500" },
+  create_user: { icon: UserPlus, label: "Användare skapad", color: "text-accent" },
+  list_users: { icon: Users, label: "Personal listad", color: "text-blue-500" },
+  change_user_role: { icon: Shield, label: "Roll ändrad", color: "text-blue-500" },
+  reset_user_password: { icon: Key, label: "Lösenord återställt", color: "text-blue-500" },
+  move_user_to_workplace: { icon: ArrowRightLeft, label: "Användare flyttad", color: "text-blue-500" },
+  update_ai_prompt: { icon: Bot, label: "AI-prompt uppdaterad", color: "text-blue-500" },
+  manage_demo_prompts: { icon: MessageSquare, label: "Demoprompter uppdaterade", color: "text-blue-500" },
+  manage_contacts: { icon: Contact, label: "Kontakter uppdaterade", color: "text-blue-500" },
+  manage_important_times: { icon: Clock, label: "Viktiga tider uppdaterade", color: "text-blue-500" },
+  manage_invite_codes: { icon: Ticket, label: "Inbjudningskod hanterad", color: "text-blue-500" },
 };
 
 export function ChatView() {
