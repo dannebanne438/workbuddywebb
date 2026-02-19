@@ -1,16 +1,11 @@
 import { usePresentation } from "@/contexts/PresentationContext";
 import { Button } from "@/components/ui/button";
-import { Rocket, Calendar, CheckCircle2 } from "lucide-react";
+import { Calendar, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export function PresentationCTA() {
   const { exit } = usePresentation();
   const navigate = useNavigate();
-
-  const handlePilot = () => {
-    exit();
-    navigate("/#contact");
-  };
 
   const handleDemo = () => {
     exit();
@@ -18,12 +13,12 @@ export function PresentationCTA() {
   };
 
   const highlights = [
-    "Fullständig avvikelsehantering med AI och beviskedja",
-    "Realtidsschema med automatisk konfliktvarning",
-    "Digital platschef tränad på er bransch",
-    "Checklistor, certifikat och dokumenthantering",
-    "Modulärt system – aktivera det ni behöver",
-    "Ingen installation, igång på minuter",
+    "Avvikelsehantering med beviskedja och PDF-export",
+    "Automatiska riskvarningar för certifikat och bemanning",
+    "Digital platschef som förstår byggregler och AMA",
+    "Realtidsschema med konfliktvarning",
+    "Checklistor för skyddsrond och egenkontroll",
+    "Modulärt – aktivera det ni behöver, när ni behöver det",
   ];
 
   return (
@@ -37,10 +32,10 @@ export function PresentationCTA() {
         </div>
 
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-          Redo att ta nästa steg?
+          Redo att digitalisera ert byggprojekt?
         </h1>
         <p className="text-lg text-muted-foreground mb-8">
-          Ni har precis sett vad WorkBuddy kan göra. Föreställ er allt detta – anpassat för er verksamhet.
+          Ni har precis sett vad WorkBuddy kan göra. Föreställ er allt detta – anpassat för just ert projekt och er verksamhet.
         </p>
 
         {/* Summary highlights */}
