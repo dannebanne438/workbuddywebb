@@ -9,13 +9,14 @@ import { format, startOfWeek, endOfWeek } from "date-fns";
 import { sv } from "date-fns/locale";
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
 
-type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features";
 
 interface DashboardViewProps {
   onNavigate?: (view: PortalView) => void;
+  isPresentation?: boolean;
 }
 
-export function DashboardView({ onNavigate }: DashboardViewProps) {
+export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps) {
   const { activeWorkplace } = useWorkplace();
   const [activeToday, setActiveToday] = useState(0);
   const [openIncidents, setOpenIncidents] = useState(0);
@@ -102,7 +103,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-presentation="kpi-cards">
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
@@ -158,7 +159,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
         </Card>
 
         {/* Risk warnings */}
-        <Card>
+        <Card data-presentation="risk-warnings">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Riskvarningar</CardTitle>
           </CardHeader>

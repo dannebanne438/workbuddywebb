@@ -277,7 +277,7 @@ export function CameraView() {
                 Ta en bild eller välj från galleriet. AI:n analyserar och föreslår om det ska bli en nyhet eller avvikelse.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm" data-presentation="camera-buttons">
                 <Button
                   variant="hero"
                   size="lg"
