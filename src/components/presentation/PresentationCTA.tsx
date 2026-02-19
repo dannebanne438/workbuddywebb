@@ -61,10 +61,10 @@ export function PresentationCTA() {
         </div>
 
         <button
-          onClick={exit}
+          onClick={() => { exit(); navigate("/"); }}
           className="mt-8 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          Fortsätt utforska portalen →
+          Tillbaka till startsidan →
         </button>
       </div>
     </div>
