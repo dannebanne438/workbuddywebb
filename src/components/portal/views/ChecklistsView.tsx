@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ClipboardList, Check, ChevronDown, ChevronUp, Send, Save, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Check, ChevronDown, ChevronUp, Send, Save, CheckCircle2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Json } from "@/integrations/supabase/types";
 import { SendChecklistDialog } from "../checklists/SendChecklistDialog";
+import { DeleteChecklistDialog } from "../checklists/DeleteChecklistDialog";
 
 interface ChecklistItem {
   text: string;
@@ -47,6 +48,8 @@ export function ChecklistsView() {
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [selectedChecklist, setSelectedChecklist] = useState<Checklist | null>(null);
   const [filter, setFilter] = useState<FilterType>("active");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [checklistToDelete, setChecklistToDelete] = useState<Checklist | null>(null);
 
   useEffect(() => {
     if (activeWorkplace?.id) fetchChecklists();
@@ -231,6 +234,9 @@ export function ChecklistsView() {
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedChecklist(checklist); setSendDialogOpen(true); }} title="Skicka">
                         <Send className="h-3.5 w-3.5" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => { setChecklistToDelete(checklist); setDeleteDialogOpen(true); }} title="Ta bort">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                       {checklist.is_template && <Badge variant="secondary" className="text-xs ml-1">Mall</Badge>}
                       {isCompleted && <Badge className="bg-green-500 text-white text-xs ml-1">Slutförd</Badge>}
                     </div>
@@ -288,6 +294,7 @@ export function ChecklistsView() {
       </div>
       
       <SendChecklistDialog open={sendDialogOpen} onOpenChange={setSendDialogOpen} checklist={selectedChecklist} />
+      <DeleteChecklistDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} checklist={checklistToDelete} onSuccess={fetchChecklists} />
     </div>
   );
 }
