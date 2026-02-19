@@ -80,11 +80,11 @@ export const PRESENTATION_STEPS: PresentationStep[] = [
   {
     id: "ai-chat",
     view: "camera",
-    title: "Er AI-assistent som förstår er verksamhet",
-    description: "Skriv eller prata med WorkBuddy på vanlig svenska. AI:n är tränad på er bransch och era rutiner. Fråga om regler, be om hjälp med beräkningar, eller ge kommandon som utförs direkt.",
+    title: "Er digitala platschef – alltid tillgänglig",
+    description: "Skriv eller prata med WorkBuddy på vanlig svenska. Er digitala platschef är tränad på er bransch och era rutiner. Fråga om regler, be om hjälp med beräkningar, eller ge kommandon som utförs direkt.",
     example: "Exempel: \"Vad säger AFS 2023:2 om fallskydd vid arbete över 2 meter?\" → WorkBuddy svarar med korrekt regeltext och praktiska rekommendationer.",
     duration: 9000,
-    icon: "💬",
+    icon: "👷",
   },
   {
     id: "schedule",

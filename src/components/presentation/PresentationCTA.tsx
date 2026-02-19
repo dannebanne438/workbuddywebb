@@ -20,7 +20,7 @@ export function PresentationCTA() {
   const highlights = [
     "Fullständig avvikelsehantering med AI och beviskedja",
     "Realtidsschema med automatisk konfliktvarning",
-    "AI-assistent tränad på er bransch",
+    "Digital platschef tränad på er bransch",
     "Checklistor, certifikat och dokumenthantering",
     "Modulärt system – aktivera det ni behöver",
     "Ingen installation, igång på minuter",
@@ -53,12 +53,8 @@ export function PresentationCTA() {
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button variant="hero" size="xl" onClick={handlePilot}>
-            <Rocket className="h-5 w-5 mr-2" />
-            Starta gratis pilot
-          </Button>
-          <Button variant="hero-outline" size="xl" onClick={handleDemo}>
+        <div className="flex justify-center">
+          <Button variant="hero" size="xl" onClick={handleDemo}>
             <Calendar className="h-5 w-5 mr-2" />
             Boka en genomgång
           </Button>
