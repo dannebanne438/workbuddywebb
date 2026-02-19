@@ -22,6 +22,7 @@ import { PresentationOverlay } from "../presentation/PresentationOverlay";
 import { PresentationIntro } from "../presentation/PresentationIntro";
 import { PresentationCTA } from "../presentation/PresentationCTA";
 import { PresentationFeatureView } from "../presentation/PresentationFeatureView";
+import { PresentationMultilingualChat } from "../presentation/PresentationMultilingualChat";
 import { PresentationNotificationToast } from "../presentation/PresentationNotificationToast";
 import { usePresentationMockData } from "../presentation/PresentationMockData";
 import { PresentationProvider, usePresentation } from "@/contexts/PresentationContext";
@@ -84,6 +85,9 @@ function PortalContentInner() {
       // For camera steps in presentation, show the camera view with presentationMode
       if (currentStepData.view === "camera" && currentStepData.id === "camera-analysis") {
         return <CameraViewPresentation />;
+      }
+      if (currentStepData.view === "camera" && currentStepData.id === "ai-chat") {
+        return <PresentationMultilingualChat />;
       }
     }
 

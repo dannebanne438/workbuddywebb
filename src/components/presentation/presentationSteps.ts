@@ -80,11 +80,11 @@ export const PRESENTATION_STEPS: PresentationStep[] = [
   {
     id: "ai-chat",
     view: "camera",
-    title: "Er digitala platschef – alltid tillgänglig",
-    description: "Ställ frågor på vanlig svenska och få svar direkt. WorkBuddy är tränad på byggregler, AMA, arbetsmiljölagstiftning och era egna rutiner. Som att ha en erfaren kollega i fickan – dygnet runt.",
-    example: "Exempel: \"Vad gäller för tillfälliga elinstallationer på byggarbetsplats?\" → WorkBuddy svarar med gällande regler och praktiska rekommendationer anpassade för er typ av projekt.",
-    duration: 12000,
-    icon: "👷",
+    title: "Förstår alla på bygget – oavsett språk",
+    description: "Er digitala platschef svarar på svenska, engelska, polska, arabiska och fler språk. Perfekt för projekt med internationella UE och blandade team. Alla kan ställa frågor om byggregler och rutiner på sitt eget språk.",
+    example: "Exempel: En polsk UE-snickare undrar vilka regler som gäller för arbete på höjd – och får svaret direkt på polska, med hänvisning till svenska arbetsmiljöregler.",
+    duration: 18000,
+    icon: "🌍",
   },
   {
     id: "schedule",
