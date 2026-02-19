@@ -18,6 +18,14 @@ export function PresentationOverlay() {
   } = usePresentation();
 
   const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Animate in on step change
+  useEffect(() => {
+    setIsVisible(false);
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, [currentStep]);
 
   // Find and track spotlight target
   useEffect(() => {
@@ -35,7 +43,6 @@ export function PresentationOverlay() {
       }
     };
 
-    // Delay to let view render
     const timer = setTimeout(findElement, 500);
     const interval = setInterval(findElement, 1000);
 
@@ -51,12 +58,14 @@ export function PresentationOverlay() {
   if (currentStepData.view === "intro" || currentStepData.view === "cta") return null;
 
   const padding = 12;
+  const stepData = currentStepData as { icon?: string; example?: string; title: string; description: string };
+  const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none">
       {/* Spotlight overlay */}
       {spotlightRect && (
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full transition-all duration-700" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <mask id="spotlight-mask">
               <rect width="100%" height="100%" fill="white" />
@@ -67,27 +76,41 @@ export function PresentationOverlay() {
                 height={spotlightRect.height + padding * 2}
                 rx="12"
                 fill="black"
+                className="transition-all duration-700"
               />
             </mask>
           </defs>
           <rect
             width="100%"
             height="100%"
-            fill="rgba(0,0,0,0.5)"
+            fill="rgba(0,0,0,0.55)"
             mask="url(#spotlight-mask)"
           />
         </svg>
       )}
 
+      {/* Progress bar at top */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-muted/30 pointer-events-none">
+        <div
+          className="h-full bg-primary transition-all duration-700 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
       {/* Bottom panel */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-auto">
+      <div className={`absolute bottom-0 left-0 right-0 pointer-events-auto transition-all duration-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="mx-auto max-w-2xl p-4 pb-6">
           <div className="bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-6">
-            {/* Step counter */}
+            {/* Step counter + exit */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground font-medium">
-                {currentStep + 1} / {totalSteps}
-              </span>
+              <div className="flex items-center gap-2">
+                {stepData.icon && (
+                  <span className="text-xl">{stepData.icon}</span>
+                )}
+                <span className="text-xs text-muted-foreground font-medium">
+                  Steg {currentStep + 1} av {totalSteps}
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -99,13 +122,24 @@ export function PresentationOverlay() {
               </Button>
             </div>
 
-            {/* Text */}
-            <h2 className="text-lg font-semibold text-foreground mb-1">
-              {currentStepData.title}
+            {/* Title */}
+            <h2 className="text-lg font-semibold text-foreground mb-2">
+              {stepData.title}
             </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              {currentStepData.description}
+
+            {/* Description */}
+            <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+              {stepData.description}
             </p>
+
+            {/* Example box */}
+            {stepData.example && (
+              <div className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3 mb-4">
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  {stepData.example}
+                </p>
+              </div>
+            )}
 
             {/* Controls */}
             <div className="flex items-center justify-between">
