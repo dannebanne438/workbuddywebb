@@ -1,15 +1,10 @@
-import { usePresentation } from "@/contexts/PresentationContext";
 import { Button } from "@/components/ui/button";
 import { Calendar, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 export function PresentationCTA() {
-  const { exit } = usePresentation();
-  const navigate = useNavigate();
 
   const handleDemo = () => {
-    exit();
-    navigate("/#contact");
+    window.open("/#contact", "_blank");
   };
 
   const highlights = [
@@ -55,12 +50,6 @@ export function PresentationCTA() {
           </Button>
         </div>
 
-        <button
-          onClick={() => { exit(); navigate("/"); }}
-          className="mt-8 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Tillbaka till startsidan →
-        </button>
       </div>
     </div>
   );

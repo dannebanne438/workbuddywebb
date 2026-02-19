@@ -1,6 +1,6 @@
 import { usePresentation } from "@/contexts/PresentationContext";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function PresentationOverlay() {
@@ -14,7 +14,6 @@ export function PresentationOverlay() {
     prev,
     pause,
     resume,
-    exit,
   } = usePresentation();
 
   const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
@@ -101,25 +100,14 @@ export function PresentationOverlay() {
       <div className={`absolute bottom-0 left-0 right-0 pointer-events-auto transition-all duration-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
         <div className="mx-auto max-w-2xl p-4 pb-6">
           <div className="bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-6">
-            {/* Step counter + exit */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                {stepData.icon && (
-                  <span className="text-xl">{stepData.icon}</span>
-                )}
-                <span className="text-xs text-muted-foreground font-medium">
-                  Steg {currentStep + 1} av {totalSteps}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={exit}
-                className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
-              >
-                <X className="h-3.5 w-3.5 mr-1" />
-                Avsluta
-              </Button>
+            {/* Step counter */}
+            <div className="flex items-center gap-2 mb-3">
+              {stepData.icon && (
+                <span className="text-xl">{stepData.icon}</span>
+              )}
+              <span className="text-xs text-muted-foreground font-medium">
+                Steg {currentStep + 1} av {totalSteps}
+              </span>
             </div>
 
             {/* Title */}
