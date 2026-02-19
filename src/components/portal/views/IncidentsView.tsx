@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
+import { IncidentDetailView } from "../incidents/IncidentDetailView";
 import { toast } from "sonner";
 
 interface Incident {
@@ -17,6 +18,7 @@ interface Incident {
   severity: string;
   category: string;
   reported_by_name: string | null;
+  assigned_to_name: string | null;
   status: string;
   created_at: string;
 }
@@ -55,6 +57,7 @@ export function IncidentsView() {
   const [addOpen, setAddOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
 
   const fetchIncidents = useCallback(async () => {
     if (!activeWorkplace) return;
@@ -70,21 +73,20 @@ export function IncidentsView() {
 
   useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
 
-  const updateStatus = async (id: string, newStatus: string) => {
-    const update: Record<string, unknown> = { status: newStatus };
-    if (newStatus === "resolved" || newStatus === "closed") {
-      update.resolved_at = new Date().toISOString();
-    }
-    const { error } = await supabase.from("incidents").update(update).eq("id", id);
-    if (error) toast.error("Kunde inte uppdatera");
-    else fetchIncidents();
-  };
-
   const filtered = incidents.filter((i) => {
     if (filterCategory !== "all" && i.category !== filterCategory) return false;
     if (filterStatus !== "all" && i.status !== filterStatus) return false;
     return true;
   });
+
+  if (selectedIncidentId) {
+    return (
+      <IncidentDetailView
+        incidentId={selectedIncidentId}
+        onBack={() => { setSelectedIncidentId(null); fetchIncidents(); }}
+      />
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-4 h-full overflow-y-auto">
@@ -122,7 +124,11 @@ export function IncidentsView() {
       ) : (
         <div className="space-y-2">
           {filtered.map((inc) => (
-            <Card key={inc.id}>
+            <Card
+              key={inc.id}
+              className="cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => setSelectedIncidentId(inc.id)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -130,20 +136,16 @@ export function IncidentsView() {
                       <span className="font-medium text-foreground">{inc.title}</span>
                       <Badge variant={SEVERITY_COLORS[inc.severity]}>{SEVERITY_LABELS[inc.severity]}</Badge>
                       <Badge variant="outline">{CATEGORY_LABELS[inc.category]}</Badge>
+                      <Badge variant={inc.status === "closed" ? "default" : "secondary"} className="text-[10px]">
+                        {STATUS_LABELS[inc.status]}
+                      </Badge>
                     </div>
-                    {inc.description && <p className="text-sm text-muted-foreground mb-1">{inc.description}</p>}
+                    {inc.description && <p className="text-sm text-muted-foreground mb-1 line-clamp-1">{inc.description}</p>}
                     <p className="text-xs text-muted-foreground">
                       {inc.reported_by_name} • {new Date(inc.created_at).toLocaleDateString("sv-SE")}
+                      {inc.assigned_to_name && ` • Tilldelad: ${inc.assigned_to_name}`}
                     </p>
                   </div>
-                  {isWorkplaceAdmin && (
-                    <Select value={inc.status} onValueChange={(v) => updateStatus(inc.id, v)}>
-                      <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  )}
                 </div>
               </CardContent>
             </Card>
