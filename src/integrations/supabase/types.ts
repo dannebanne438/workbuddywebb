@@ -99,6 +99,51 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          changed_fields: string[] | null
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string
+          server_timestamp: string
+          table_name: string
+          timezone: string
+          user_id: string | null
+          workplace_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: string[] | null
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id: string
+          server_timestamp?: string
+          table_name: string
+          timezone?: string
+          user_id?: string | null
+          workplace_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: string[] | null
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string
+          server_timestamp?: string
+          table_name?: string
+          timezone?: string
+          user_id?: string | null
+          workplace_id?: string | null
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           certificate_number: string | null
@@ -538,9 +583,69 @@ export type Database = {
           },
         ]
       }
+      incident_evidence: {
+        Row: {
+          description: string | null
+          evidence_type: string
+          id: string
+          image_url: string
+          incident_id: string
+          locked: boolean
+          server_timestamp: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          workplace_id: string
+        }
+        Insert: {
+          description?: string | null
+          evidence_type: string
+          id?: string
+          image_url: string
+          incident_id: string
+          locked?: boolean
+          server_timestamp?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          workplace_id: string
+        }
+        Update: {
+          description?: string | null
+          evidence_type?: string
+          id?: string
+          image_url?: string
+          incident_id?: string
+          locked?: boolean
+          server_timestamp?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_evidence_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_evidence_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidents: {
         Row: {
+          action_comment: string | null
+          assigned_to: string | null
+          assigned_to_name: string | null
           category: string
+          closed_at: string | null
+          closed_by: string | null
+          closed_by_name: string | null
           created_at: string
           description: string | null
           id: string
@@ -554,7 +659,13 @@ export type Database = {
           workplace_id: string
         }
         Insert: {
+          action_comment?: string | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
           category?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_by_name?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -568,7 +679,13 @@ export type Database = {
           workplace_id: string
         }
         Update: {
+          action_comment?: string | null
+          assigned_to?: string | null
+          assigned_to_name?: string | null
           category?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closed_by_name?: string | null
           created_at?: string
           description?: string | null
           id?: string
