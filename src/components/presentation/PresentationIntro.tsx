@@ -1,6 +1,6 @@
 import { usePresentation } from "@/contexts/PresentationContext";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Shield, Brain, Clock, Users } from "lucide-react";
+import { ChevronRight, HardHat, Shield, Clock, Users } from "lucide-react";
 
 export function PresentationIntro() {
   const { next, exit } = usePresentation();
@@ -22,19 +22,19 @@ export function PresentationIntro() {
           Välkommen till WorkBuddy
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-4 leading-relaxed">
-          Plattformen som gör arbetsplatser säkrare, smartare och enklare att leda.
+          Operativsystemet för byggarbetsplatsen.
         </p>
-        <p className="text-sm text-muted-foreground/70 mb-10 max-w-lg mx-auto">
-          Under de kommande minuterna visar vi hur WorkBuddy hjälper er att gå från papperslappar och mejlkedjor till full digital kontroll – med AI som er assistent.
+        <p className="text-sm text-muted-foreground/70 mb-10 max-w-lg mx-auto leading-relaxed">
+          Under de kommande minuterna visar vi hur WorkBuddy hjälper platschefer och byggteam att gå från papperslappar, mejlkedjor och Excel till full digital kontroll – direkt i mobilen.
         </p>
 
         {/* Value props */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 max-w-xl mx-auto">
           {[
             { icon: Shield, label: "Säkerhet" },
-            { icon: Brain, label: "AI-driven" },
+            { icon: HardHat, label: "Byggfokus" },
             { icon: Clock, label: "Realtid" },
-            { icon: Users, label: "Teamwork" },
+            { icon: Users, label: "Hela teamet" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border">
               <Icon className="h-5 w-5 text-primary" />

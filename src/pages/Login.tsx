@@ -145,7 +145,8 @@ const Login = () => {
       setWorkplaceName(`${workplace.name} (${workplace.company_name})`);
       
       // Check if this is a presentation workplace
-      if (workplaceCode.toUpperCase() === "WBPRESENTATION") {
+      const upperCode = workplaceCode.toUpperCase();
+      if (upperCode === "WBPRESENTATION" || upperCode === "BYGGPRESENTATION") {
         localStorage.setItem("wb_presentation_mode", "true");
       }
       
