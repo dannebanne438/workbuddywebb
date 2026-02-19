@@ -1,86 +1,71 @@
 
 
-# Implementeringsplan - 5 förbättringar
+# Utöka WorkBuddy AI till ett HQ-verktyg
 
-## 1. Dashboard: Avvikelser-kort som länkar direkt till Avvikelser-vyn
+## Vad som redan finns
+WorkBuddy AI kan idag hantera: schema, checklistor, rutiner, nyheter, avvikelser och certifikat via tool calling (AI anropar funktioner i backend).
 
-Avvikelsekorten i Dashboard (KPI-kortet "Öppna avvikelser" och "Senaste avvikelser"-listan) ska bli klickbara och navigera direkt till Avvikelser-vyn.
+## Vad vi kan lägga till
 
-### Tekniska ändringar
-- **DashboardView.tsx**: Gör KPI-kortet "Öppna avvikelser" klickbart med `onClick={() => onNavigate?.("incidents")}`
-- Gör varje rad i "Senaste avvikelser"-listan klickbar med samma navigering
-- Lägg till visuell hover-effekt (cursor-pointer, hover:bg)
+### 1. Hantera arbetsplatser via chatten
+Nya AI-verktyg i `workbuddy-chat` edge function:
+- **create_workplace** - Skapa ny arbetsplats (namn, företag, bransch, typ)
+- **update_workplace_settings** - Ändra inställningar (timlön, OB, max timmar, etc.)
+- **toggle_features** - Slå av/på moduler (schema, certifikat, teamchatt etc.)
+- **list_workplaces** - Lista alla arbetsplatser med statistik
 
----
+Dessa anropar befintliga `manage-workplace` edge function-logiken internt.
 
-## 2. Dokumentimport i systemet
+### 2. Hantera användare via chatten
+Nya AI-verktyg:
+- **create_user** - Skapa ny användare (e-post, namn, lösenord, roll, arbetsplats)
+- **list_users** - Lista personal per arbetsplats
+- **change_user_role** - Ändra roll (anställd/admin)
+- **reset_user_password** - Återställa lösenord
+- **move_user_to_workplace** - Flytta användare mellan arbetsplatser
 
-Skapa en ny funktion för att ladda upp och lagra dokument (PDF, Word, bilder etc.) kopplat till arbetsplatsen. Dokument lagras i Lovable Cloud Storage (inte i databasen).
+Dessa använder `supabaseAdmin` (service role) och är strikt begränsade till super_admin.
 
-### Tekniska ändringar
-- **Databas**: Skapa tabell `documents` (id, workplace_id, title, file_url, file_type, file_size, uploaded_by, uploaded_by_name, category, created_at) med RLS-policies
-- **Storage**: Skapa storage bucket `documents` för filuppladdning
-- **Ny vy**: `DocumentsView.tsx` med uppladdning, listning, filtrering per kategori, och nedladdning/förhandsgranskning
-- **Navigation**: Lägg till "Dokument" i sidomenyn (PortalSidebar, MobileBottomNav/MobileNav) med FileText-ikon
-- **PortalContent.tsx**: Lägg till "documents"-vy i router/switch
+### 3. Konfigurera systemet via chatten
+Nya AI-verktyg:
+- **update_ai_prompt** - Ändra arbetsplatsens AI-prompt
+- **manage_demo_prompts** - Skapa/redigera/ta bort demoprompter
+- **manage_contacts** - Lägga till/ta bort kontakter
+- **manage_important_times** - Ändra viktiga tider
+- **manage_invite_codes** - Skapa/inaktivera inbjudningskoder
 
----
+### 4. Kodgenerering - Begränsning
+Att faktiskt generera kod och skapa nya vyer/funktioner som Lovable gör kräver en fullständig utvecklingsmiljö med filsystem, deployment-pipeline och versionshantering. Det kan vi inte replikera i en chattbot.
 
-## 3. Fotolagring med pedagogisk dokumentationsmiljö
+**Vad vi KAN göra istället:**
+- AI:n kan skapa och konfigurera nya **checklistmallar**, **rutindokument**, **arbetsplatsregler** etc. - alltså "funktioner" i verksamhetsmening
+- AI:n kan anpassa sitt eget beteende per arbetsplats via custom prompts
 
-Skapa en bildbank/galleri kopplat till arbetsplatsen där foton kan laddas upp, kategoriseras och enkelt hämtas. Fokus på pedagogisk dokumentation.
+## Teknisk implementation
 
-### Tekniska ändringar
-- **Databas**: Skapa tabell `photos` (id, workplace_id, title, description, image_url, category, tags, uploaded_by, uploaded_by_name, created_at) med RLS-policies
-- **Storage**: Skapa storage bucket `photos` (public) för bildlagring
-- **Ny vy**: `PhotoGalleryView.tsx` med rutnätsvisning, kategorifilter (t.ex. "Pedagogisk dokumentation", "Aktiviteter", "Projekt"), uppladdning, och enkel nedladdning/kopiering av bilder
-- **Navigation**: Lägg till "Bildbank" i sidomenyn med Image-ikon
-- **PortalContent.tsx**: Lägg till "photos"-vy
+### Steg 1: Utöka tool-definitionen i `workbuddy-chat/index.ts`
+- Lägga till ca 12 nya tool-definitioner med parametrar
+- Alla nya verktyg kräver `super_admin`-roll
 
----
+### Steg 2: Implementera `executeToolCall` för nya verktyg
+- Arbetsplatshantering: direkt CRUD via `supabaseAdmin`
+- Användarhantering: använda `supabaseAdmin.auth.admin` API:et
+- Konfiguration: uppdatera `workplaces.settings` JSONB-fältet
 
-## 4. Checklista: Spara-funktion och "Slutförd"-markering
+### Steg 3: Uppdatera systemprompt
+- Lägga till instruktioner för super_admin om nya verktyg
+- Lista tillgängliga arbetsplatser i kontexten
+- Bekräftelsekrav gäller även här
 
-Lägg till möjligheten att spara en checklista som mall samt att markera en checklista som slutförd.
+### Steg 4: Uppdatera ChatView UI
+- Nya action-ikoner för arbetsplats/användare/konfigurationsändringar
+- Visuella bekräftelser för admin-åtgärder
 
-### Tekniska ändringar
-- **Databas**: Lägg till kolumner i `checklists`: `status` (text, default 'active'), `completed_at` (timestamp, nullable), `completed_by` (uuid, nullable), `completed_by_name` (text, nullable)
-- **ChecklistsView.tsx**:
-  - Lägg till "Spara som mall"-knapp som duplicerar checklistan med `is_template: true` och nollställda checkboxar
-  - Lägg till "Markera som slutförd"-knapp som sätter status till 'completed' och sparar tidpunkt + vem som slutförde
-  - Slutförda checklistor visas med visuell indikation (grön ram, slutförd-badge)
-  - Filtreringsmöjlighet: Aktiva / Slutförda / Mallar
+## Säkerhet
+- Alla nya verktyg kontrolleras med `isSuperAdmin`-flaggan
+- Befintlig "Confirmation First"-policy gäller
+- Alla operationer loggas via befintlig konversationshistorik
 
----
-
-## 5. Färgsystem (Röd/Gul/Grön) i checklistor
-
-Visa checklistornas framsteg med färgkodning baserat på hur många punkter som är avklarade.
-
-### Tekniska ändringar
-- **ChecklistsView.tsx** och **ChatChecklistCard.tsx**:
-  - Progress-bar och kort-ram färgas baserat på procent:
-    - **Rod** (0-33%): Knappt påbörjad
-    - **Gul** (34-66%): Pågående
-    - **Gron** (67-100%): Snart/helt klar
-  - Logik: `percent <= 33 ? "bg-red-500 border-red-500/50" : percent <= 66 ? "bg-yellow-500 border-yellow-500/50" : "bg-green-500 border-green-500/50"`
-  - Applicera på progress-baren, KPI-siffror och kortets border
-
----
-
-## Sammanfattning av filer som berörs
-
-| Fil | Ändring |
-|-----|---------|
-| DashboardView.tsx | Klickbara avvikelse-kort |
-| ChecklistsView.tsx | Spara mall, slutför, färgsystem |
-| ChatChecklistCard.tsx | Färgsystem progress |
-| PortalSidebar.tsx | Nya menyval (Dokument, Bildbank) |
-| MobileBottomNav.tsx | Nya menyval |
-| MobileNav.tsx | Nya menyval |
-| PortalContent.tsx | Nya vyer i switch |
-| DocumentsView.tsx | Ny fil - dokumenthantering |
-| PhotoGalleryView.tsx | Ny fil - bildgalleri |
-| features.ts | Nya feature-nycklar |
-| Databasmigration | Nya tabeller + kolumner + storage buckets |
+## Sammanfattning
+Vi kan göra WorkBuddy till en kraftfull HQ-styrcentral via chatten - skapa arbetsplatser, hantera användare, konfigurera moduler och inställningar. Det enda vi inte kan göra är att generera faktisk appkod som Lovable.
 
