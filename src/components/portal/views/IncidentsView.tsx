@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
 import { IncidentDetailView } from "../incidents/IncidentDetailView";
 import { toast } from "sonner";
+import type { MockIncident, MockCertWarning, MockScheduleEntry, MockNotification } from "@/components/presentation/PresentationMockData";
 
 interface Incident {
   id: string;
@@ -21,6 +22,14 @@ interface Incident {
   assigned_to_name: string | null;
   status: string;
   created_at: string;
+}
+
+interface MockData {
+  incidents: MockIncident[];
+  certWarnings: MockCertWarning[];
+  schedule: MockScheduleEntry[];
+  notifications: MockNotification[];
+  liveKPIs: { activeToday: number; openIncidents: number; expiringCerts: number; weekHours: number };
 }
 
 const SEVERITY_COLORS: Record<string, "destructive" | "secondary" | "default" | "outline"> = {
@@ -49,7 +58,12 @@ const STATUS_LABELS: Record<string, string> = {
   closed: "Stängd",
 };
 
-export function IncidentsView() {
+interface IncidentsViewProps {
+  isPresentation?: boolean;
+  mockData?: MockData;
+}
+
+export function IncidentsView({ isPresentation, mockData }: IncidentsViewProps) {
   const { activeWorkplace } = useWorkplace();
   const { isWorkplaceAdmin } = useAuth();
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -71,9 +85,14 @@ export function IncidentsView() {
     setLoading(false);
   }, [activeWorkplace]);
 
-  useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
+  useEffect(() => { if (!isPresentation) fetchIncidents(); }, [fetchIncidents, isPresentation]);
 
-  const filtered = incidents.filter((i) => {
+  // Use mock data in presentation mode
+  const displayData = isPresentation && mockData
+    ? mockData.incidents.map(mi => ({ ...mi, assigned_to_name: null } as Incident & { isNew?: boolean }))
+    : incidents.map(i => ({ ...i, isNew: false }));
+
+  const filtered = displayData.filter((i) => {
     if (filterCategory !== "all" && i.category !== filterCategory) return false;
     if (filterStatus !== "all" && i.status !== filterStatus) return false;
     return true;
@@ -117,17 +136,17 @@ export function IncidentsView() {
         </Select>
       </div>
 
-      {loading ? (
+      {(isPresentation ? displayData.length === 0 : loading) ? (
         <p className="text-muted-foreground text-sm">Laddar...</p>
       ) : filtered.length === 0 ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">Inga avvikelser hittade.</CardContent></Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((inc) => (
+          {filtered.map((inc: any) => (
             <Card
               key={inc.id}
-              className="cursor-pointer hover:border-primary/50 transition-colors"
-              onClick={() => setSelectedIncidentId(inc.id)}
+              className={`cursor-pointer hover:border-primary/50 transition-all duration-500 ${inc.isNew ? "animate-fade-in border-destructive/50 shadow-md" : ""}`}
+              onClick={() => !isPresentation && setSelectedIncidentId(inc.id)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">

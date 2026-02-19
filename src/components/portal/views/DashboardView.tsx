@@ -8,15 +8,25 @@ import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { sv } from "date-fns/locale";
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
+import type { MockIncident, MockCertWarning, MockScheduleEntry, MockNotification } from "@/components/presentation/PresentationMockData";
 
 type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features";
+
+interface MockData {
+  incidents: MockIncident[];
+  certWarnings: MockCertWarning[];
+  schedule: MockScheduleEntry[];
+  notifications: MockNotification[];
+  liveKPIs: { activeToday: number; openIncidents: number; expiringCerts: number; weekHours: number };
+}
 
 interface DashboardViewProps {
   onNavigate?: (view: PortalView) => void;
   isPresentation?: boolean;
+  mockData?: MockData;
 }
 
-export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps) {
+export function DashboardView({ onNavigate, isPresentation, mockData }: DashboardViewProps) {
   const { activeWorkplace } = useWorkplace();
   const [activeToday, setActiveToday] = useState(0);
   const [openIncidents, setOpenIncidents] = useState(0);
@@ -84,7 +94,22 @@ export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps
     setRiskWarnings(warnings.slice(0, 6));
   }, [activeWorkplace]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { if (!isPresentation) fetchData(); }, [fetchData, isPresentation]);
+
+  // Use mock data during presentation
+  const displayKPIs = isPresentation && mockData ? mockData.liveKPIs : { activeToday, openIncidents, expiringCerts, weekHours };
+  const displaySchedule = isPresentation && mockData ? mockData.schedule : todaySchedule;
+  const displayIncidents = isPresentation && mockData ? mockData.incidents : recentIncidents;
+  const displayWarnings = isPresentation && mockData ? [
+    ...mockData.certWarnings.map(c => ({
+      text: `${c.user_name}: ${c.certificate_type} ${c.status === "expired" ? "utgånget" : "går ut " + new Date(c.expiry_date).toLocaleDateString("sv-SE")}`,
+      level: c.status === "expired" ? "critical" : "warning",
+      isNew: c.isNew,
+    })),
+    ...(mockData.incidents.filter(i => i.status === "open").length > 0
+      ? [{ text: `${mockData.incidents.filter(i => i.status === "open").length} öppna avvikelser`, level: "warning", isNew: false }]
+      : []),
+  ] : riskWarnings;
 
   const SEVERITY_COLORS: Record<string, string> = {
     critical: "text-red-500",
@@ -104,34 +129,34 @@ export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-presentation="kpi-cards">
-        <Card>
+        <Card className={`transition-all duration-500 ${isPresentation && displayKPIs.activeToday > 0 ? "animate-scale-in" : ""}`}>
           <CardContent className="p-4 text-center">
             <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
-            <p className="text-2xl font-bold text-foreground">{activeToday}</p>
+            <p className="text-2xl font-bold text-foreground">{displayKPIs.activeToday}</p>
             <p className="text-xs text-muted-foreground">Aktiva idag</p>
           </CardContent>
         </Card>
         <Card
-          className={`${openIncidents > 0 ? "border-destructive/50" : ""} cursor-pointer hover:bg-accent/50 transition-colors`}
+          className={`cursor-pointer hover:bg-accent/50 transition-all duration-500 ${displayKPIs.openIncidents > 0 ? "border-destructive/50" : ""} ${isPresentation && displayKPIs.openIncidents > 0 ? "animate-scale-in" : ""}`}
           onClick={() => onNavigate?.("incidents")}
         >
           <CardContent className="p-4 text-center">
-            <AlertTriangle className={`h-5 w-5 mx-auto mb-1 ${openIncidents > 0 ? "text-destructive" : "text-primary"}`} />
-            <p className="text-2xl font-bold text-foreground">{openIncidents}</p>
+            <AlertTriangle className={`h-5 w-5 mx-auto mb-1 ${displayKPIs.openIncidents > 0 ? "text-destructive animate-pulse" : "text-primary"}`} />
+            <p className="text-2xl font-bold text-foreground">{displayKPIs.openIncidents}</p>
             <p className="text-xs text-muted-foreground">Öppna avvikelser</p>
           </CardContent>
         </Card>
-        <Card className={expiringCerts > 0 ? "border-yellow-500/50" : ""}>
+        <Card className={`transition-all duration-500 ${displayKPIs.expiringCerts > 0 ? "border-yellow-500/50" : ""} ${isPresentation && displayKPIs.expiringCerts > 0 ? "animate-scale-in" : ""}`}>
           <CardContent className="p-4 text-center">
-            <Award className={`h-5 w-5 mx-auto mb-1 ${expiringCerts > 0 ? "text-yellow-500" : "text-primary"}`} />
-            <p className="text-2xl font-bold text-foreground">{expiringCerts}</p>
+            <Award className={`h-5 w-5 mx-auto mb-1 ${displayKPIs.expiringCerts > 0 ? "text-yellow-500 animate-pulse" : "text-primary"}`} />
+            <p className="text-2xl font-bold text-foreground">{displayKPIs.expiringCerts}</p>
             <p className="text-xs text-muted-foreground">Certifikat ⚠️</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={`transition-all duration-500 ${isPresentation && displayKPIs.weekHours > 0 ? "animate-scale-in" : ""}`}>
           <CardContent className="p-4 text-center">
             <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
-            <p className="text-2xl font-bold text-foreground">{weekHours}h</p>
+            <p className="text-2xl font-bold text-foreground">{displayKPIs.weekHours}h</p>
             <p className="text-xs text-muted-foreground">Veckotimmar</p>
           </CardContent>
         </Card>
@@ -145,11 +170,11 @@ export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps
             <CardTitle className="text-sm font-semibold">Dagens schema</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {todaySchedule.length === 0 ? (
+            {displaySchedule.length === 0 ? (
               <p className="text-sm text-muted-foreground">Inga pass idag</p>
             ) : (
-              todaySchedule.map((s: any) => (
-                <div key={s.id} className="flex items-center justify-between text-sm">
+              displaySchedule.map((s: any) => (
+                <div key={s.id} className={`flex items-center justify-between text-sm transition-all duration-500 ${s.isNew ? "animate-fade-in bg-primary/5 rounded px-1" : ""}`}>
                   <span className="text-foreground">{s.start_time}–{s.end_time} {s.user_name}</span>
                   {s.role && <Badge variant="outline" className="text-xs">{s.role}</Badge>}
                 </div>
@@ -164,12 +189,12 @@ export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps
             <CardTitle className="text-sm font-semibold">Riskvarningar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {riskWarnings.length === 0 ? (
-              <p className="text-sm text-green-600">✓ Inga aktiva varningar</p>
+            {displayWarnings.length === 0 ? (
+              <p className="text-sm text-muted-foreground">✓ Inga aktiva varningar</p>
             ) : (
-              riskWarnings.map((w, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm">
-                  <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${w.level === "critical" ? "text-destructive" : "text-yellow-500"}`} />
+              displayWarnings.map((w: any, i: number) => (
+                <div key={i} className={`flex items-start gap-2 text-sm transition-all duration-500 ${w.isNew ? "animate-fade-in bg-destructive/5 rounded px-2 py-1" : ""}`}>
+                  <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${w.level === "critical" ? "text-destructive" : "text-yellow-500"} ${w.isNew ? "animate-pulse" : ""}`} />
                   <span className="text-foreground">{w.text}</span>
                 </div>
               ))
@@ -186,16 +211,16 @@ export function DashboardView({ onNavigate, isPresentation }: DashboardViewProps
             <CardTitle className="text-sm font-semibold">Senaste avvikelser</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {recentIncidents.length === 0 ? (
+            {displayIncidents.length === 0 ? (
               <p className="text-sm text-muted-foreground">Inga avvikelser</p>
             ) : (
-              recentIncidents.map((inc: any) => (
+              displayIncidents.map((inc: any) => (
                 <div
                   key={inc.id}
-                  className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded p-1 -m-1 transition-colors"
+                  className={`flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded p-1 -m-1 transition-all duration-500 ${inc.isNew ? "animate-fade-in bg-destructive/5" : ""}`}
                   onClick={() => onNavigate?.("incidents")}
                 >
-                  <AlertTriangle className={`h-3.5 w-3.5 shrink-0 ${SEVERITY_COLORS[inc.severity] || ""}`} />
+                  <AlertTriangle className={`h-3.5 w-3.5 shrink-0 ${SEVERITY_COLORS[inc.severity] || ""} ${inc.isNew ? "animate-pulse" : ""}`} />
                   <span className="text-foreground truncate">{inc.title}</span>
                   <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
                     {new Date(inc.created_at).toLocaleDateString("sv-SE")}
