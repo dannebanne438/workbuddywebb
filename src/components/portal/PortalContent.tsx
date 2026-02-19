@@ -22,6 +22,8 @@ import { PresentationOverlay } from "../presentation/PresentationOverlay";
 import { PresentationIntro } from "../presentation/PresentationIntro";
 import { PresentationCTA } from "../presentation/PresentationCTA";
 import { PresentationFeatureView } from "../presentation/PresentationFeatureView";
+import { PresentationNotificationToast } from "../presentation/PresentationNotificationToast";
+import { usePresentationMockData } from "../presentation/PresentationMockData";
 import { PresentationProvider, usePresentation } from "@/contexts/PresentationContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
@@ -36,6 +38,7 @@ function PortalContentInner() {
   const { profile, isSuperAdmin } = useAuth();
   const { activeWorkplace } = useWorkplace();
   const { isPresentation, currentStepData } = usePresentation();
+  const mockData = usePresentationMockData();
   const [currentView, setCurrentView] = useState<PortalView>("camera");
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -96,7 +99,7 @@ function PortalContentInner() {
 
     switch (currentView) {
       case "dashboard":
-        return <DashboardView onNavigate={setCurrentView} isPresentation={isPresentation} />;
+        return <DashboardView onNavigate={setCurrentView} isPresentation={isPresentation} mockData={isPresentation ? mockData : undefined} />;
       case "camera":
         return <CameraWithChatView />;
       case "team-chat":
@@ -114,7 +117,7 @@ function PortalContentInner() {
       case "settings":
         return <SettingsView />;
       case "incidents":
-        return <IncidentsView />;
+        return <IncidentsView isPresentation={isPresentation} mockData={isPresentation ? mockData : undefined} />;
       case "documents":
         return <DocumentsView />;
       case "photos":
@@ -178,6 +181,7 @@ function PortalContentInner() {
 
       {/* Presentation overlay */}
       <PresentationOverlay />
+      {isPresentation && <PresentationNotificationToast notifications={mockData.notifications} />}
       
       {!isPresentation && (
         <OnboardingModal
