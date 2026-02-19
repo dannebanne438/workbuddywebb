@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { PRESENTATION_STEPS, type PresentationStep } from "@/components/presentation/presentationSteps";
+import { useWorkplace } from "@/contexts/WorkplaceContext";
 
 interface PresentationContextType {
   isPresentation: boolean;
@@ -17,12 +18,15 @@ interface PresentationContextType {
 
 const PresentationContext = createContext<PresentationContextType | null>(null);
 
-const PRESENTATION_KEY = "wb_presentation_mode";
+const PRESENTATION_CODES = ["WBPRESENTATION", "BYGGPRESENTATION"];
 
 export function PresentationProvider({ children }: { children: React.ReactNode }) {
-  const [isPresentation, setIsPresentation] = useState(() => {
-    return localStorage.getItem(PRESENTATION_KEY) === "true";
-  });
+  const { activeWorkplace } = useWorkplace();
+  const isPresentationWorkplace = activeWorkplace?.workplace_code
+    ? PRESENTATION_CODES.includes(activeWorkplace.workplace_code.toUpperCase())
+    : false;
+
+  const [isPresentation, setIsPresentation] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +62,6 @@ export function PresentationProvider({ children }: { children: React.ReactNode }
   const exit = useCallback(() => {
     clearTimer();
     setIsPresentation(false);
-    localStorage.removeItem(PRESENTATION_KEY);
     setCurrentStep(0);
     setIsPlaying(false);
   }, [clearTimer]);
@@ -67,8 +70,14 @@ export function PresentationProvider({ children }: { children: React.ReactNode }
     setCurrentStep(0);
     setIsPlaying(true);
     setIsPresentation(true);
-    localStorage.setItem(PRESENTATION_KEY, "true");
   }, []);
+
+  // Auto-start presentation when on a presentation workplace
+  useEffect(() => {
+    if (isPresentationWorkplace && !isPresentation) {
+      start();
+    }
+  }, [isPresentationWorkplace]);
 
   // Auto-advance timer
   useEffect(() => {
