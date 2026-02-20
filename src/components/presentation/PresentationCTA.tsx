@@ -24,10 +24,13 @@ export function PresentationCTA() {
             Vill ni se hur detta fungerar på ert projekt?
           </h1>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-4">
             <Button variant="hero" size="xl" onClick={handleDemo}>
               <Calendar className="h-5 w-5 mr-2" />
               Boka en genomgång
+            </Button>
+            <Button variant="ghost" size="lg" onClick={() => window.location.href = "/"}>
+              Tillbaka till startsidan
             </Button>
           </div>
         </div>
