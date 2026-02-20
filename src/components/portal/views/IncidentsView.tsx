@@ -29,7 +29,7 @@ interface MockData {
   certWarnings: MockCertWarning[];
   schedule: MockScheduleEntry[];
   notifications: MockNotification[];
-  liveKPIs: { activeToday: number; openIncidents: number; expiringCerts: number; weekHours: number };
+  liveKPIs: { activeToday: number; openIncidents: number; expiringCerts: number; avgResolutionTime: string };
 }
 
 const SEVERITY_COLORS: Record<string, "destructive" | "secondary" | "default" | "outline"> = {

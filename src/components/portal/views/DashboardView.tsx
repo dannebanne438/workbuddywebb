@@ -17,7 +17,7 @@ interface MockData {
   certWarnings: MockCertWarning[];
   schedule: MockScheduleEntry[];
   notifications: MockNotification[];
-  liveKPIs: { activeToday: number; openIncidents: number; expiringCerts: number; weekHours: number };
+  liveKPIs: { activeToday: number; openIncidents: number; expiringCerts: number; avgResolutionTime: string };
 }
 
 interface DashboardViewProps {
@@ -161,10 +161,10 @@ export function DashboardView({ onNavigate, isPresentation, mockData }: Dashboar
             <p className="text-xs text-muted-foreground">Certifikat ⚠️</p>
           </CardContent>
         </Card>
-        <Card className={`transition-all duration-500 ${isPresentation && ('avgResolutionTime' in displayKPIs ? displayKPIs.avgResolutionTime !== "–" : (displayKPIs as any).weekHours > 0) ? "animate-scale-in" : ""}`}>
+        <Card className={`transition-all duration-500 ${isPresentation && displayKPIs.avgResolutionTime !== "–" ? "animate-scale-in" : ""}`}>
           <CardContent className="p-4 text-center">
             <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
-            <p className="text-2xl font-bold text-foreground">{'avgResolutionTime' in displayKPIs ? displayKPIs.avgResolutionTime : `${(displayKPIs as any).weekHours}h`}</p>
+            <p className="text-2xl font-bold text-foreground">{displayKPIs.avgResolutionTime}</p>
             <p className="text-xs text-muted-foreground">Snitt åtgärdstid</p>
           </CardContent>
         </Card>

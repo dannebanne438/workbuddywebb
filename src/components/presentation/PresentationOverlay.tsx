@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 export function PresentationOverlay() {
   const {
     isPresentation,
+    isByggPresentation,
     currentStep,
     currentStepData,
     totalSteps,
@@ -18,13 +19,27 @@ export function PresentationOverlay() {
 
   const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [visibleBullets, setVisibleBullets] = useState<number>(0);
 
   // Animate in on step change
   useEffect(() => {
     setIsVisible(false);
+    setVisibleBullets(0);
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
   }, [currentStep]);
+
+  // Stagger bullets for bygg presentation
+  useEffect(() => {
+    if (!isByggPresentation || !currentStepData.bullets?.length) return;
+    setVisibleBullets(0);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    currentStepData.bullets.forEach((_, i) => {
+      const t = setTimeout(() => setVisibleBullets(i + 1), 600 + i * 500);
+      timers.push(t);
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [currentStep, isByggPresentation, currentStepData.bullets]);
 
   // Find and track spotlight target
   useEffect(() => {
@@ -57,8 +72,9 @@ export function PresentationOverlay() {
   if (currentStepData.view === "intro" || currentStepData.view === "cta") return null;
 
   const padding = 12;
-  const stepData = currentStepData as { icon?: string; example?: string; title: string; description: string };
+  const stepData = currentStepData as { icon?: string; example?: string; bullets?: string[]; title: string; description: string };
   const progress = ((currentStep + 1) / totalSteps) * 100;
+  const hasBullets = stepData.bullets && stepData.bullets.length > 0;
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none">
@@ -106,27 +122,47 @@ export function PresentationOverlay() {
                 <span className="text-xl">{stepData.icon}</span>
               )}
               <span className="text-xs text-muted-foreground font-medium">
-                Steg {currentStep + 1} av {totalSteps}
+                {isByggPresentation ? `${currentStep} / ${totalSteps - 1}` : `Steg ${currentStep + 1} av ${totalSteps}`}
               </span>
             </div>
 
             {/* Title */}
-            <h2 className="text-lg font-semibold text-foreground mb-2">
+            <h2 className={`font-semibold text-foreground mb-2 ${isByggPresentation ? 'text-xl' : 'text-lg'}`}>
               {stepData.title}
             </h2>
 
-            {/* Description */}
-            <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-              {stepData.description}
-            </p>
-
-            {/* Example box */}
-            {stepData.example && (
-              <div className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3 mb-4">
-                <p className="text-xs text-foreground/80 leading-relaxed">
-                  {stepData.example}
-                </p>
-              </div>
+            {/* Bullets (bygg) or Description (standard) */}
+            {hasBullets ? (
+              <ul className="space-y-1.5 mb-4">
+                {stepData.bullets!.map((bullet, i) => (
+                  <li
+                    key={i}
+                    className={`flex items-start gap-2 text-sm text-foreground/90 transition-all duration-500 ${
+                      i < visibleBullets
+                        ? 'opacity-100 translate-x-0'
+                        : 'opacity-0 -translate-x-3'
+                    }`}
+                  >
+                    <span className="text-primary mt-0.5 shrink-0">•</span>
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <>
+                {stepData.description && (
+                  <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                    {stepData.description}
+                  </p>
+                )}
+                {stepData.example && (
+                  <div className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3 mb-4">
+                    <p className="text-xs text-foreground/80 leading-relaxed">
+                      {stepData.example}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Controls */}

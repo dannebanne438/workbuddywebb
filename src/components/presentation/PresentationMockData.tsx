@@ -141,7 +141,7 @@ export function usePresentationMockData() {
   const [certWarnings, setCertWarnings] = useState<MockCertWarning[]>([]);
   const [schedule, setSchedule] = useState<MockScheduleEntry[]>([]);
   const [notifications, setNotifications] = useState<MockNotification[]>([]);
-  const [liveKPIs, setLiveKPIs] = useState({ activeToday: 0, openIncidents: 0, expiringCerts: 0, weekHours: 0 });
+  const [liveKPIs, setLiveKPIs] = useState({ activeToday: 0, openIncidents: 0, expiringCerts: 0, avgResolutionTime: "–" });
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Clean up timers
@@ -163,14 +163,14 @@ export function usePresentationMockData() {
     // Dashboard steps - animate KPIs counting up and data appearing
     if (view === "dashboard") {
       // Stagger KPIs
-      setLiveKPIs({ activeToday: 0, openIncidents: 0, expiringCerts: 0, weekHours: 0 });
+      setLiveKPIs({ activeToday: 0, openIncidents: 0, expiringCerts: 0, avgResolutionTime: "–" });
       setIncidents([]);
       setCertWarnings([]);
 
       const t1 = setTimeout(() => setLiveKPIs(prev => ({ ...prev, activeToday: 8 })), 400);
       const t2 = setTimeout(() => setLiveKPIs(prev => ({ ...prev, openIncidents: 3 })), 800);
       const t3 = setTimeout(() => setLiveKPIs(prev => ({ ...prev, expiringCerts: 2 })), 1200);
-      const t4 = setTimeout(() => setLiveKPIs(prev => ({ ...prev, weekHours: 312 })), 1600);
+      const t4 = setTimeout(() => setLiveKPIs(prev => ({ ...prev, avgResolutionTime: "4h" })), 1600);
       timerRefs.current.push(t1, t2, t3, t4);
 
       // Animate incidents appearing one by one

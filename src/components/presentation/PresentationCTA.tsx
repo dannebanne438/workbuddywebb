@@ -1,11 +1,39 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, CheckCircle2 } from "lucide-react";
+import { usePresentation } from "@/contexts/PresentationContext";
 
 export function PresentationCTA() {
+  const { isByggPresentation } = usePresentation();
 
   const handleDemo = () => {
     window.open("/#contact", "_blank");
   };
+
+  if (isByggPresentation) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-background relative overflow-hidden">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+
+        <div className="relative text-center max-w-2xl px-6 animate-fade-in">
+          <div className="h-20 w-20 rounded-2xl wb-gradient-accent flex items-center justify-center mx-auto mb-8 shadow-lg">
+            <span className="text-3xl font-bold text-primary-foreground">W</span>
+          </div>
+
+          <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
+            Vill ni se hur detta fungerar på ert projekt?
+          </h1>
+
+          <div className="flex justify-center">
+            <Button variant="hero" size="xl" onClick={handleDemo}>
+              <Calendar className="h-5 w-5 mr-2" />
+              Boka en genomgång
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const highlights = [
     "Avvikelsehantering med beviskedja och PDF-export",
@@ -33,7 +61,6 @@ export function PresentationCTA() {
           Ni har precis sett vad WorkBuddy kan göra. Föreställ er allt detta – anpassat för just ert projekt och er verksamhet.
         </p>
 
-        {/* Summary highlights */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-10 text-left max-w-lg mx-auto">
           {highlights.map((text) => (
             <div key={text} className="flex items-start gap-2 p-2">
@@ -49,7 +76,6 @@ export function PresentationCTA() {
             Boka en genomgång
           </Button>
         </div>
-
       </div>
     </div>
   );
