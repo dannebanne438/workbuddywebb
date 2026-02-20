@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Users, AlertTriangle, Award, Clock, Plus, ClipboardList, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
-import { format, startOfWeek, endOfWeek } from "date-fns";
-import { sv } from "date-fns/locale";
+import { format } from "date-fns";
+
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
 import type { MockIncident, MockCertWarning, MockScheduleEntry, MockNotification } from "@/components/presentation/PresentationMockData";
 
@@ -31,7 +31,7 @@ export function DashboardView({ onNavigate, isPresentation, mockData }: Dashboar
   const [activeToday, setActiveToday] = useState(0);
   const [openIncidents, setOpenIncidents] = useState(0);
   const [expiringCerts, setExpiringCerts] = useState(0);
-  const [weekHours, setWeekHours] = useState(0);
+  const [avgResolutionTime, setAvgResolutionTime] = useState("");
   const [todaySchedule, setTodaySchedule] = useState<any[]>([]);
   const [riskWarnings, setRiskWarnings] = useState<any[]>([]);
   const [recentIncidents, setRecentIncidents] = useState<any[]>([]);
@@ -40,14 +40,11 @@ export function DashboardView({ onNavigate, isPresentation, mockData }: Dashboar
   const fetchData = useCallback(async () => {
     if (!activeWorkplace) return;
     const today = format(new Date(), "yyyy-MM-dd");
-    const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
-    const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
     const thirtyDays = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
 
     // Parallel fetches
-    const [schedToday, schedWeek, incidents, certs] = await Promise.all([
+    const [schedToday, incidents, certs] = await Promise.all([
       supabase.from("schedules").select("*").eq("workplace_id", activeWorkplace.id).eq("shift_date", today),
-      supabase.from("schedules").select("*").eq("workplace_id", activeWorkplace.id).gte("shift_date", weekStart).lte("shift_date", weekEnd),
       supabase.from("incidents").select("*").eq("workplace_id", activeWorkplace.id).order("created_at", { ascending: false }),
       supabase.from("certificates").select("*").eq("workplace_id", activeWorkplace.id),
     ]);
@@ -57,18 +54,29 @@ export function DashboardView({ onNavigate, isPresentation, mockData }: Dashboar
     setActiveToday(new Set(todayData.map((s: any) => s.user_name || s.user_id)).size);
     setTodaySchedule(todayData.slice(0, 8));
 
-    // Week hours
-    const totalMinutes = (schedWeek.data || []).reduce((sum: number, s: any) => {
-      const [sh, sm] = (s.start_time || "0:0").split(":").map(Number);
-      const [eh, em] = (s.end_time || "0:0").split(":").map(Number);
-      return sum + (eh * 60 + em) - (sh * 60 + sm);
-    }, 0);
-    setWeekHours(Math.round(totalMinutes / 60));
-
     // Incidents
     const allIncidents = incidents.data || [];
     setOpenIncidents(allIncidents.filter((i: any) => i.status !== "resolved" && i.status !== "closed").length);
     setRecentIncidents(allIncidents.slice(0, 5));
+
+    // Avg resolution time
+    const resolvedIncidents = allIncidents.filter((i: any) => (i.status === "resolved" || i.status === "closed") && i.resolved_at);
+    if (resolvedIncidents.length > 0) {
+      const totalMs = resolvedIncidents.reduce((sum: number, i: any) => {
+        return sum + (new Date(i.resolved_at).getTime() - new Date(i.created_at).getTime());
+      }, 0);
+      const avgMs = totalMs / resolvedIncidents.length;
+      const avgHours = avgMs / (1000 * 60 * 60);
+      if (avgHours < 1) {
+        setAvgResolutionTime(`${Math.round(avgMs / (1000 * 60))}m`);
+      } else if (avgHours < 24) {
+        setAvgResolutionTime(`${Math.round(avgHours)}h`);
+      } else {
+        setAvgResolutionTime(`${Math.round(avgHours / 24)}d`);
+      }
+    } else {
+      setAvgResolutionTime("–");
+    }
 
     // Certificates
     const allCerts = certs.data || [];
@@ -97,7 +105,7 @@ export function DashboardView({ onNavigate, isPresentation, mockData }: Dashboar
   useEffect(() => { if (!isPresentation) fetchData(); }, [fetchData, isPresentation]);
 
   // Use mock data during presentation
-  const displayKPIs = isPresentation && mockData ? mockData.liveKPIs : { activeToday, openIncidents, expiringCerts, weekHours };
+  const displayKPIs = isPresentation && mockData ? mockData.liveKPIs : { activeToday, openIncidents, expiringCerts, avgResolutionTime };
   const displaySchedule = isPresentation && mockData ? mockData.schedule : todaySchedule;
   const displayIncidents = isPresentation && mockData ? mockData.incidents : recentIncidents;
   const displayWarnings = isPresentation && mockData ? [
@@ -153,11 +161,11 @@ export function DashboardView({ onNavigate, isPresentation, mockData }: Dashboar
             <p className="text-xs text-muted-foreground">Certifikat ⚠️</p>
           </CardContent>
         </Card>
-        <Card className={`transition-all duration-500 ${isPresentation && displayKPIs.weekHours > 0 ? "animate-scale-in" : ""}`}>
+        <Card className={`transition-all duration-500 ${isPresentation && ('avgResolutionTime' in displayKPIs ? displayKPIs.avgResolutionTime !== "–" : (displayKPIs as any).weekHours > 0) ? "animate-scale-in" : ""}`}>
           <CardContent className="p-4 text-center">
             <Clock className="h-5 w-5 mx-auto mb-1 text-primary" />
-            <p className="text-2xl font-bold text-foreground">{displayKPIs.weekHours}h</p>
-            <p className="text-xs text-muted-foreground">Veckotimmar</p>
+            <p className="text-2xl font-bold text-foreground">{'avgResolutionTime' in displayKPIs ? displayKPIs.avgResolutionTime : `${(displayKPIs as any).weekHours}h`}</p>
+            <p className="text-xs text-muted-foreground">Snitt åtgärdstid</p>
           </CardContent>
         </Card>
       </div>
