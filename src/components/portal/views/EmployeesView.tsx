@@ -37,7 +37,7 @@ interface InviteCode {
   uses_count: number;
 }
 
-export function EmployeesView() {
+export function EmployeesView({ isPresentation }: { isPresentation?: boolean } = {}) {
   const { isWorkplaceAdmin, session } = useAuth();
   const { activeWorkplace } = useWorkplace();
   const { toast } = useToast();
@@ -152,7 +152,7 @@ export function EmployeesView() {
     }
   };
 
-  if (!isWorkplaceAdmin) {
+  if (!isWorkplaceAdmin && !isPresentation) {
     return (
       <div className="h-full flex items-center justify-center">
         <p className="text-muted-foreground">Du har inte behörighet att se denna sida.</p>
