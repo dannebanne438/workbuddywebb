@@ -117,7 +117,7 @@ function PortalContentInner() {
       case "announcements":
         return <AnnouncementsView />;
       case "employees":
-        return <EmployeesView />;
+        return <EmployeesView isPresentation={isPresentation} />;
       case "settings":
         return <SettingsView />;
       case "incidents":
