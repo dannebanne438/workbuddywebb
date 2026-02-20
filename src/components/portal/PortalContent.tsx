@@ -83,7 +83,7 @@ function PortalContentInner() {
       if (currentStepData.view === "cta") return <PresentationCTA />;
       if (currentStepData.view === "features") return <PresentationFeatureView />;
       // For camera steps in presentation, show the camera view with presentationMode
-      if (currentStepData.view === "camera" && currentStepData.id === "camera-analysis") {
+      if (currentStepData.view === "camera" && (currentStepData.id === "camera-analysis" || currentStepData.id === "bygg-slide-6")) {
         return <CameraViewPresentation />;
       }
       if (currentStepData.view === "camera" && currentStepData.id === "ai-chat") {

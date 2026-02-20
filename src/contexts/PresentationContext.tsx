@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { PRESENTATION_STEPS, type PresentationStep } from "@/components/presentation/presentationSteps";
+import { BYGG_PRESENTATION_STEPS } from "@/components/presentation/byggPresentationSteps";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 
 interface PresentationContextType {
   isPresentation: boolean;
+  isByggPresentation: boolean;
   currentStep: number;
   currentStepData: PresentationStep;
   totalSteps: number;
@@ -22,16 +24,18 @@ const PRESENTATION_CODES = ["WBPRESENTATION", "BYGGPRESENTATION"];
 
 export function PresentationProvider({ children }: { children: React.ReactNode }) {
   const { activeWorkplace } = useWorkplace();
-  const isPresentationWorkplace = activeWorkplace?.workplace_code
-    ? PRESENTATION_CODES.includes(activeWorkplace.workplace_code.toUpperCase())
-    : false;
+  const workplaceCode = activeWorkplace?.workplace_code?.toUpperCase() || "";
+  const isPresentationWorkplace = PRESENTATION_CODES.includes(workplaceCode);
+  const isByggPresentation = workplaceCode === "BYGGPRESENTATION";
+
+  const steps = useMemo(() => isByggPresentation ? BYGG_PRESENTATION_STEPS : PRESENTATION_STEPS, [isByggPresentation]);
 
   const [isPresentation, setIsPresentation] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const currentStepData = PRESENTATION_STEPS[currentStep] || PRESENTATION_STEPS[0];
+  const currentStepData = steps[currentStep] || steps[0];
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -42,8 +46,8 @@ export function PresentationProvider({ children }: { children: React.ReactNode }
 
   const next = useCallback(() => {
     clearTimer();
-    setCurrentStep((prev) => Math.min(prev + 1, PRESENTATION_STEPS.length - 1));
-  }, [clearTimer]);
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+  }, [clearTimer, steps.length]);
 
   const prev = useCallback(() => {
     clearTimer();
@@ -82,27 +86,28 @@ export function PresentationProvider({ children }: { children: React.ReactNode }
   // Auto-advance timer
   useEffect(() => {
     if (!isPresentation || !isPlaying) return;
-    const step = PRESENTATION_STEPS[currentStep];
-    if (!step || step.duration === 0) return; // CTA stays
+    const step = steps[currentStep];
+    if (!step || step.duration === 0) return;
 
     clearTimer();
     timerRef.current = setTimeout(() => {
       setCurrentStep((prev) => {
-        if (prev < PRESENTATION_STEPS.length - 1) return prev + 1;
+        if (prev < steps.length - 1) return prev + 1;
         return prev;
       });
     }, step.duration);
 
     return clearTimer;
-  }, [isPresentation, isPlaying, currentStep, clearTimer]);
+  }, [isPresentation, isPlaying, currentStep, clearTimer, steps]);
 
   return (
     <PresentationContext.Provider
       value={{
         isPresentation,
+        isByggPresentation,
         currentStep,
         currentStepData,
-        totalSteps: PRESENTATION_STEPS.length,
+        totalSteps: steps.length,
         isPlaying,
         next,
         prev,

@@ -6,6 +6,7 @@ export interface PresentationStep {
   title: string;
   description: string;
   example?: string;
+  bullets?: string[];
   duration: number;
   spotlightSelector?: string;
   icon?: string;
