@@ -37,12 +37,28 @@ export function AddIncidentDialog({ open, onOpenChange, onAdded }: AddIncidentDi
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("medium");
   const [category, setCategory] = useState("safety");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeWorkplace || !user) return;
 
     setLoading(true);
+
+    let imageUrl: string | null = null;
+    if (photoFile) {
+      const fileName = `${activeWorkplace.id}/${Date.now()}_${photoFile.name}`;
+      const { error: uploadError } = await supabase.storage.from("camera-uploads").upload(fileName, photoFile);
+      if (uploadError) {
+        toast.error("Kunde inte ladda upp bild");
+        setLoading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("camera-uploads").getPublicUrl(fileName);
+      imageUrl = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from("incidents").insert({
       workplace_id: activeWorkplace.id,
       title,
@@ -51,6 +67,7 @@ export function AddIncidentDialog({ open, onOpenChange, onAdded }: AddIncidentDi
       category,
       reported_by: user.id,
       reported_by_name: profile?.full_name || profile?.email || "Okänd",
+      image_url: imageUrl,
     });
     setLoading(false);
 
@@ -63,6 +80,8 @@ export function AddIncidentDialog({ open, onOpenChange, onAdded }: AddIncidentDi
       setDescription("");
       setSeverity("medium");
       setCategory("safety");
+      setPhotoFile(null);
+      setPhotoPreview(null);
       onAdded();
     }
   };
@@ -105,6 +124,26 @@ export function AddIncidentDialog({ open, onOpenChange, onAdded }: AddIncidentDi
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div>
+            <Label htmlFor="photo">Foto (valfritt)</Label>
+            {photoPreview && (
+              <div className="mt-1 mb-2 rounded-lg overflow-hidden border border-border">
+                <img src={photoPreview} alt="Förhandsgranskning" className="w-full h-32 object-cover" />
+              </div>
+            )}
+            <Input
+              id="photo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setPhotoFile(file);
+                  setPhotoPreview(URL.createObjectURL(file));
+                }
+              }}
+            />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Avbryt</Button>

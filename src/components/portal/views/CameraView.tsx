@@ -45,7 +45,12 @@ const CATEGORY_OPTIONS = [
   { value: "delay", label: "Försening" },
 ];
 
-export function CameraView() {
+interface CameraViewProps {
+  defaultType?: "incident" | "announcement";
+  onSuccess?: () => void;
+}
+
+export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
   const { session, user, profile } = useAuth();
   const { activeWorkplace } = useWorkplace();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +64,7 @@ export function CameraView() {
   const [isPublishing, setIsPublishing] = useState(false);
 
   // Editable fields
-  const [postType, setPostType] = useState<PostType>("announcement");
+  const [postType, setPostType] = useState<PostType>(defaultType || "announcement");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("medium");
@@ -151,7 +156,7 @@ export function CameraView() {
       const result = data.analysis as AnalysisResult;
 
       setAnalysis(result);
-      setPostType(result.suggested_type);
+      setPostType(defaultType || result.suggested_type);
       setTitle(result.title);
       setDescription(result.description);
       setSeverity(result.severity || "medium");
@@ -226,6 +231,7 @@ export function CameraView() {
       }
 
       setStep("success");
+      onSuccess?.();
     } catch (err) {
       console.error("Publish error:", err);
       toast.error("Kunde inte publicera");
@@ -251,12 +257,20 @@ export function CameraView() {
       <header className="px-6 py-4 border-b border-border bg-card">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl wb-gradient-accent flex items-center justify-center">
-            <Camera className="h-5 w-5 text-primary-foreground" />
+            {defaultType === "incident" ? (
+              <AlertTriangle className="h-5 w-5 text-primary-foreground" />
+            ) : (
+              <Camera className="h-5 w-5 text-primary-foreground" />
+            )}
           </div>
           <div>
-            <h1 className="font-semibold text-foreground">Fotodokumentation</h1>
+            <h1 className="font-semibold text-foreground">
+              {defaultType === "incident" ? "Rapportera avvikelse med foto" : "Fotodokumentation"}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Ta bild → AI analyserar → Publicera nyhet eller avvikelse
+              {defaultType === "incident"
+                ? "Ta bild → AI analyserar → Rapportera avvikelse"
+                : "Ta bild → AI analyserar → Publicera nyhet eller avvikelse"}
             </p>
           </div>
         </div>
@@ -355,30 +369,32 @@ export function CameraView() {
                 </div>
               )}
 
-              {/* Type selector */}
-              <div>
-                <Label>Typ</Label>
-                <div className="flex gap-2 mt-1">
-                  <Button
-                    type="button"
-                    variant={postType === "announcement" ? "default" : "outline"}
-                    className="flex-1"
-                    onClick={() => setPostType("announcement")}
-                  >
-                    <Bell className="h-4 w-4 mr-2" />
-                    Nyhet
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={postType === "incident" ? "destructive" : "outline"}
-                    className="flex-1"
-                    onClick={() => setPostType("incident")}
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Avvikelse
-                  </Button>
+              {/* Type selector - hidden when defaultType is set */}
+              {!defaultType && (
+                <div>
+                  <Label>Typ</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Button
+                      type="button"
+                      variant={postType === "announcement" ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => setPostType("announcement")}
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Nyhet
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={postType === "incident" ? "destructive" : "outline"}
+                      className="flex-1"
+                      onClick={() => setPostType("incident")}
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Avvikelse
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Title */}
               <div>
