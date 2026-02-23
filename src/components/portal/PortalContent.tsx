@@ -83,10 +83,10 @@ function PortalContentInner() {
       if (currentStepData.view === "cta") return <PresentationCTA />;
       if (currentStepData.view === "features") return <PresentationFeatureView />;
       // For camera steps in presentation, show the camera view with presentationMode
-      if (currentStepData.view === "camera" && (currentStepData.id === "camera-analysis" || currentStepData.id === "bygg-slide-6")) {
+      if (currentStepData.view === "camera" && (currentStepData.id === "camera-analysis" || currentStepData.id === "bygg-slide-2")) {
         return <CameraViewPresentation />;
       }
-      if (currentStepData.view === "camera" && currentStepData.id === "ai-chat") {
+      if (currentStepData.view === "camera" && (currentStepData.id === "ai-chat" || currentStepData.id === "bygg-slide-5")) {
         return <PresentationMultilingualChat />;
       }
     }
