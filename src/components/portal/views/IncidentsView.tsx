@@ -3,12 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, AlertTriangle, Filter } from "lucide-react";
+import { Plus, AlertTriangle, Filter, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddIncidentDialog } from "../incidents/AddIncidentDialog";
 import { IncidentDetailView } from "../incidents/IncidentDetailView";
+import { CameraView } from "./CameraView";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import type { MockIncident, MockCertWarning, MockScheduleEntry, MockNotification } from "@/components/presentation/PresentationMockData";
 
@@ -69,6 +72,8 @@ export function IncidentsView({ isPresentation, mockData }: IncidentsViewProps) 
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
@@ -114,9 +119,14 @@ export function IncidentsView({ isPresentation, mockData }: IncidentsViewProps) 
           <AlertTriangle className="h-6 w-6 text-primary" />
           <h1 className="text-xl font-bold text-foreground">Avvikelser</h1>
         </div>
-        <Button onClick={() => setAddOpen(true)} size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Rapportera
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setCameraOpen(true)} size="sm">
+            <Camera className="h-4 w-4 mr-1" /> Foto
+          </Button>
+          <Button onClick={() => setAddOpen(true)} size="sm" variant="outline">
+            <Plus className="h-4 w-4 mr-1" /> Manuell
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -173,6 +183,13 @@ export function IncidentsView({ isPresentation, mockData }: IncidentsViewProps) 
       )}
 
       <AddIncidentDialog open={addOpen} onOpenChange={setAddOpen} onAdded={fetchIncidents} />
+
+      <Sheet open={cameraOpen} onOpenChange={setCameraOpen}>
+        <SheetContent side={isMobile ? "bottom" : "right"} className={`p-0 ${isMobile ? "h-[90vh]" : "w-[420px] sm:max-w-[420px]"}`}>
+          <SheetTitle className="sr-only">Rapportera avvikelse med foto</SheetTitle>
+          <CameraView defaultType="incident" onSuccess={() => { setCameraOpen(false); fetchIncidents(); }} />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
