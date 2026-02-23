@@ -1,51 +1,79 @@
 
-# Kameran som central funktion i avvikelserapportering
 
-## Nuläge
-- Avvikelsevyn ("Rapportera"-knappen) oppnar en textbaserad dialog utan fotomojlighet
-- Kameravyn finns separat under WorkBuddy-fliken som sidopanel
-- Tva helt separata floden for att rapportera avvikelser
+# Fokuserad BYGGPRESENTATION: Avvikelser, PDF-bevis, Flersprakig chatt
 
-## Forandringar
+## Oversikt
+Presentationen bantas fran 8+intro+CTA till 6+intro+CTA slides. Alla slides om certifikat, dashboard, schema/checklistor tas bort. Kvarvarande teman far djupare, mer brutala formuleringar.
 
-### 1. Lagg till kameraknapp direkt i Avvikelsevyn
-Bredvid den befintliga "Rapportera"-knappen laggs en prominent kameraknapp som oppnar kameraflodet direkt fran avvikelsevyn. Kameraknappen blir den primare/storsta knappen, textrapportering blir sekundar.
+## Ny slide-struktur
 
-### 2. Lagg till fotouppladdning i AddIncidentDialog
-Den befintliga textbaserade rapporteringsdialoogen far ocksa ett fotofalt sa att varje avvikelse kan ha en bild bifogad, aven utan AI-analys.
+```text
+INTRO   -> "Kontroll. Sparbarhet. Ansvar."
+SLIDE 1 -> Avvikelsen ingen dokumenterade (risk-scenario, incidents-vy)
+SLIDE 2 -> Foto till fardig rapport direkt (kamera-vy, AI-analys)
+SLIDE 3 -> Varje andring loggas permanent (audit trail, incidents-vy)
+SLIDE 4 -> Exportera bevis pa 30 sekunder (PDF-export, incidents-vy)
+SLIDE 5 -> Alla forstar -- oavsett sprak (flersprakig chatt-vy)
+SLIDE 6 -> Fran avvikelse till ATA-underlag (helhetsflodet, incidents-vy)
+CTA     -> "Vill ni se hur detta fungerar pa ert projekt?"
+```
 
-### 3. Integrera CameraView som Sheet/Modal i Avvikelsevyn
-Nar anvandaren klickar kameraknappen i avvikelsevyn oppnas CameraView som en bottom sheet (mobil) eller sidopanel (desktop), forifylld med typ "incident" (hoppa over valet nyhet/avvikelse).
+## Detaljerade slide-texter
 
-### 4. Uppdatera CameraView med incident-fokuserat lage
-CameraView far en optional prop `defaultType="incident"` som:
-- Doljer typ-valjaren (nyhet/avvikelse)
-- Laser typen till "incident"
-- Andrar rubrik till "Rapportera avvikelse med foto"
+### Slide 1: "Avvikelsen ingen dokumenterade"
+- Spricka i stallning upptacks fredag kl 14
+- Ingen rapport skrivs -- "vi fixar pa mandag"
+- Olycka lordag. Arbetsmiljoverket kraver dokumentation
+- WorkBuddy: foto, servertidsstampel, rapport pa 30 sekunder
+- Beviskedjan finns innan ni lamnat bygget
 
----
+### Slide 2: "Foto till fardig rapport direkt" (ny djupare version)
+- Fotografera skadan -- AI foreslar kategori och allvarlighetsgrad
+- Rubrik, beskrivning och klassificering fylls i automatiskt
+- Granska, justera om du vill, publicera -- under 30 sekunder
+- Ansvarig notifieras direkt med bild och tidsstampel
+- Ingen manuell klassificering -- ingen rapportjakt
 
-## Tekniska detaljer
+### Slide 3: "Varje andring loggas permanent" (djupare)
+- Servertidsstampel som inte kan redigeras i efterhand
+- Anvandar-ID kopplas automatiskt till varje handelse
+- Fore- och efter-varden sparas vid statusandring
+- Loggar ar skrivskyddade -- ingen kan radera historik
+- Vid tvist: komplett andringslogg fran dag ett
 
-### CameraView.tsx
-- Ny prop: `defaultType?: "incident" | "announcement"`
-- Ny prop: `onSuccess?: () => void` (callback for att refresha listan)
-- Nar `defaultType` ar satt, doljs typ-valjaren och typen ar last
-- Vid lyckat publicering anropas `onSuccess`
+### Slide 4: "Exportera bevis pa 30 sekunder" (djupare)
+- PDF med foton, tidsstamplar, andringslogg och ansvariga
+- Fore- och efter-bilder kravs innan arende stangs
+- Redo for Arbetsmiljoverket, forsakringsbolag eller bestallare
+- Varje foto last med servertidsstampel vid uppladdning
+- ATA-underlag med verifierbar dokumentation i ett klick
 
-### IncidentsView.tsx
-- Lagg till state `cameraOpen` och importera `CameraView`
-- Ersatt enkel "Rapportera"-knapp med tva knappar:
-  - **Primare:** Kameraikon + "Foto" (oppnar CameraView som Sheet/sidopanel)
-  - **Sekundar:** Plus-ikon + "Manuell" (oppnar befintlig AddIncidentDialog)
-- Pa mobil: CameraView oppnas som `Sheet` fran botten
-- Pa desktop: CameraView oppnas som sidopanel (420px bred)
+### Slide 5: "Alla forstar -- oavsett sprak" (ny -- djupare chatt-slide)
+- Arbetsledaren fragar pa svenska -- svaret ar korrekt
+- Polsk UE-snickare fragar pa polska -- samma svar, ratt sprak
+- Arabisktalande betongarbetare far instruktioner pa arabiska
+- Missforstand minskar -- olycksrisken sjunker
+- Alla kan rapportera avvikelser pa sitt eget sprak
 
-### AddIncidentDialog.tsx
-- Lagg till ett valfritt fotofalt med `<input type="file" accept="image/*">` 
-- Laddar upp till `camera-uploads` bucket och sparar `image_url` pa incidenten
+### Slide 6: "Fran avvikelse till ATA-underlag" (ny helhetsbild)
+- Avvikelse rapporteras med foto fran mobilen
+- AI klassificerar, ansvarig tilldelas, atgard loggas
+- Fore- och efter-bilder dokumenterar hela forloppet
+- PDF-rapport genereras med komplett beviskedja
+- Bevisunderlaget haller i rattslig provning
 
-### Filstruktur
-- `src/components/portal/views/CameraView.tsx` - uppdateras med `defaultType` och `onSuccess` props
-- `src/components/portal/views/IncidentsView.tsx` - integrerar kameraflodet
-- `src/components/portal/incidents/AddIncidentDialog.tsx` - lagg till fotofalt
+## Tekniska andringar
+
+### 1. `byggPresentationSteps.ts`
+- Ta bort slides: bygg-slide-2 (certifikat), bygg-slide-4 (dashboard), bygg-slide-7 (schema/checklistor)
+- Uppdatera bygg-slide-6 fran kamera till ny "Alla forstar"-slide med `view: "camera"` och `id` som triggar `PresentationMultilingualChat`
+- Lagg till ny slide 6 "Fran avvikelse till ATA-underlag" med `view: "incidents"`
+- Justera slide-ID:n och ordning
+
+### 2. `PortalContent.tsx`
+- Uppdatera villkoret for `PresentationMultilingualChat` sa att det matchar det nya slide-ID:t for sprakovversattningen (t.ex. `bygg-slide-5`)
+
+### 3. Inga andra filer paverkas
+- Overlayet, intro och CTA forblir oforandrade
+- Alla vyer (incidents, camera/chat) finns redan
+
