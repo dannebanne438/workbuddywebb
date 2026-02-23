@@ -3,17 +3,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Camera,
   ImagePlus,
   Sparkles,
   Loader2,
-  Bell,
   AlertTriangle,
   Send,
   RotateCcw,
@@ -56,10 +51,9 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep] = useState<"capture" | "analyzing" | "edit" | "success">("capture");
+  const [step, setStep] = useState<"capture" | "review" | "success">("capture");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -74,9 +68,10 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
     setImageFile(file);
     const preview = URL.createObjectURL(file);
     setImagePreview(preview);
-    await analyzeImage(file);
-    // Also save to photos (Bildbank) privately
+    setStep("review");
+    setIsAnalyzing(true);
     await saveToPhotos(file);
+    await analyzeImage(file);
   };
 
   const saveToPhotos = async (file: File) => {
@@ -84,7 +79,7 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
     try {
       const filePath = `${activeWorkplace.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from("photos").upload(filePath, file);
-      if (uploadError) return; // silently fail, main flow continues
+      if (uploadError) return;
       const { data: urlData } = supabase.storage.from("photos").getPublicUrl(filePath);
       await supabase.from("photos").insert({
         workplace_id: activeWorkplace.id,
@@ -112,29 +107,21 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
   const analyzeImage = async (file: File) => {
     if (!session?.access_token) {
       toast.error("Inte inloggad");
+      setIsAnalyzing(false);
       return;
     }
 
-    setStep("analyzing");
-    setIsAnalyzing(true);
-
     try {
-      // Upload image to storage first
       const fileName = `${Date.now()}-${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("camera-uploads")
         .upload(fileName, file);
-
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from("camera-uploads")
         .getPublicUrl(fileName);
 
-      const imageUrl = urlData.publicUrl;
-
-      // Call AI analysis
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`,
         {
@@ -143,7 +130,7 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ imageUrl }),
+          body: JSON.stringify({ imageUrl: urlData.publicUrl }),
         }
       );
 
@@ -155,13 +142,11 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
       const data = await response.json();
       const result = data.analysis as AnalysisResult;
 
-      setAnalysis(result);
       setPostType(defaultType || result.suggested_type);
       setTitle(result.title);
       setDescription(result.description);
       setSeverity(result.severity || "medium");
       setCategory(result.category || "safety");
-      setStep("edit");
     } catch (err) {
       console.error("Analysis error:", err);
       toast.error(err instanceof Error ? err.message : "Kunde inte analysera bilden");
@@ -176,33 +161,11 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
 
     setIsPublishing(true);
     try {
-      // Get the stored image URL
-      const fileName = imageFile ? `${Date.now()}-${imageFile.name}` : null;
       let imageUrl: string | null = null;
-
-      if (imageFile && fileName) {
-        // Check if already uploaded during analysis
-        const { data: listData } = await supabase.storage
-          .from("camera-uploads")
-          .list();
-
-        const existingFile = listData?.find(f => imagePreview?.includes(f.name));
-        if (existingFile) {
-          const { data: urlData } = supabase.storage
-            .from("camera-uploads")
-            .getPublicUrl(existingFile.name);
-          imageUrl = urlData.publicUrl;
-        }
-      }
-
-      // Use the preview URL if we can't find the file (it was uploaded during analysis)
-      if (!imageUrl && imagePreview) {
-        // The image was uploaded during analysis, find it from the storage listing
-        const { data: listData } = await supabase.storage.from("camera-uploads").list("", { sortBy: { column: "created_at", order: "desc" }, limit: 1 });
-        if (listData?.[0]) {
-          const { data: urlData } = supabase.storage.from("camera-uploads").getPublicUrl(listData[0].name);
-          imageUrl = urlData.publicUrl;
-        }
+      const { data: listData } = await supabase.storage.from("camera-uploads").list("", { sortBy: { column: "created_at", order: "desc" }, limit: 1 });
+      if (listData?.[0]) {
+        const { data: urlData } = supabase.storage.from("camera-uploads").getPublicUrl(listData[0].name);
+        imageUrl = urlData.publicUrl;
       }
 
       if (postType === "announcement") {
@@ -244,11 +207,11 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
     setStep("capture");
     setImageFile(null);
     setImagePreview(null);
-    setAnalysis(null);
     setTitle("");
     setDescription("");
     setSeverity("medium");
     setCategory("safety");
+    setIsAnalyzing(false);
   };
 
   return (
@@ -268,9 +231,7 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
               {defaultType === "incident" ? "Rapportera avvikelse med foto" : "Fotodokumentation"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {defaultType === "incident"
-                ? "Ta bild → AI analyserar → Rapportera avvikelse"
-                : "Ta bild → AI analyserar → Publicera nyhet eller avvikelse"}
+              Ta bild → Granska → Klart
             </p>
           </div>
         </div>
@@ -278,6 +239,7 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-lg mx-auto">
+
           {/* Step 1: Capture */}
           {step === "capture" && (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -288,191 +250,158 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
                 Dokumentera med kameran
               </h2>
               <p className="text-muted-foreground mb-8 max-w-sm">
-                Ta en bild eller välj från galleriet. AI:n analyserar och föreslår om det ska bli en nyhet eller avvikelse.
+                Ta en bild eller välj från galleriet. AI:n analyserar och föreslår rapport automatiskt.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm" data-presentation="camera-buttons">
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => cameraInputRef.current?.click()}
-                >
+                <Button variant="hero" size="lg" className="flex-1" onClick={() => cameraInputRef.current?.click()}>
                   <Camera className="h-5 w-5 mr-2" />
                   Ta bild
                 </Button>
-                <Button
-                  variant="hero-outline"
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <Button variant="hero-outline" size="lg" className="flex-1" onClick={() => fileInputRef.current?.click()}>
                   <ImagePlus className="h-5 w-5 mr-2" />
                   Välj bild
                 </Button>
               </div>
 
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleCameraCapture}
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleGallerySelect}
-              />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCameraCapture} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleGallerySelect} />
             </div>
           )}
 
-          {/* Step 2: Analyzing */}
-          {step === "analyzing" && (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-              {imagePreview && (
-                <div className="w-full max-w-sm rounded-xl overflow-hidden mb-6 border border-border">
-                  <img src={imagePreview} alt="Uppladdad bild" className="w-full h-auto" />
-                </div>
-              )}
-              <div className="flex items-center gap-3 text-foreground">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <div>
-                  <p className="font-medium">AI analyserar bilden...</p>
-                  <p className="text-sm text-muted-foreground">Identifierar innehåll och föreslår åtgärd</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Edit & Publish */}
-          {step === "edit" && (
-            <div className="space-y-6">
-              {/* Image preview */}
-              {imagePreview && (
-                <div className="w-full rounded-xl overflow-hidden border border-border">
-                  <img src={imagePreview} alt="Uppladdad bild" className="w-full h-auto max-h-64 object-cover" />
-                </div>
-              )}
-
-              {/* AI confidence badge */}
-              {analysis && (
-                <div className="flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-lg px-3 py-2">
-                  <Sparkles className="h-4 w-4 text-accent" />
-                  <span className="text-sm text-foreground">
-                    AI-förslag: <strong>{analysis.suggested_type === "announcement" ? "Nyhet" : "Avvikelse"}</strong>
-                    {" "}({analysis.confidence === "high" ? "hög" : analysis.confidence === "medium" ? "medel" : "låg"} säkerhet)
-                  </span>
-                </div>
-              )}
-
-              {/* Type selector - hidden when defaultType is set */}
-              {!defaultType && (
-                <div>
-                  <Label>Typ</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Button
-                      type="button"
-                      variant={postType === "announcement" ? "default" : "outline"}
-                      className="flex-1"
-                      onClick={() => setPostType("announcement")}
-                    >
-                      <Bell className="h-4 w-4 mr-2" />
-                      Nyhet
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={postType === "incident" ? "destructive" : "outline"}
-                      className="flex-1"
-                      onClick={() => setPostType("incident")}
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Avvikelse
-                    </Button>
+          {/* Step 2: Review (analyzing + edit merged) */}
+          {step === "review" && (
+            <div className="space-y-4">
+              {/* Image with analyzing overlay */}
+              <div className="relative w-full rounded-xl overflow-hidden border border-border">
+                <img src={imagePreview!} alt="Uppladdad bild" className="w-full h-auto max-h-56 object-cover" />
+                {isAnalyzing && (
+                  <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm font-medium text-foreground">AI analyserar...</p>
                   </div>
-                </div>
-              )}
-
-              {/* Title */}
-              <div>
-                <Label htmlFor="title">Rubrik</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Rubrik..."
-                  className="mt-1"
-                />
+                )}
               </div>
 
-              {/* Description */}
-              <div>
-                <Label htmlFor="description">Beskrivning</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Beskrivning..."
-                  rows={3}
-                  className="mt-1"
-                />
-              </div>
+              {/* AI-filled fields — inline editable */}
+              {!isAnalyzing && (
+                <>
+                  {/* Title — borderless input */}
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Rubrik..."
+                    className="w-full text-lg font-semibold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground px-1 py-1"
+                  />
 
-              {/* Incident-specific fields */}
-              {postType === "incident" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Allvarlighetsgrad</Label>
-                    <Select value={severity} onValueChange={setSeverity}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {SEVERITY_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Kategori</Label>
-                    <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                  {/* Description — borderless textarea */}
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Beskrivning..."
+                    rows={2}
+                    className="w-full text-sm text-muted-foreground bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground px-1 py-1"
+                  />
+
+                  {/* Type selector — only when no defaultType */}
+                  {!defaultType && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPostType("announcement")}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          postType === "announcement"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        Nyhet
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPostType("incident")}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          postType === "incident"
+                            ? "bg-destructive text-destructive-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        Avvikelse
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Severity & Category chips — only for incidents */}
+                  {postType === "incident" && (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Allvarlighetsgrad</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {SEVERITY_OPTIONS.map((o) => (
+                            <button
+                              key={o.value}
+                              type="button"
+                              onClick={() => setSeverity(o.value)}
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                severity === o.value
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              {o.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Kategori</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {CATEGORY_OPTIONS.map((o) => (
+                            <button
+                              key={o.value}
+                              type="button"
+                              onClick={() => setCategory(o.value)}
+                              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                category === o.value
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              {o.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Actions */}
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={reset}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Börja om
+                <Button variant="outline" size="sm" onClick={reset}>
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Om
                 </Button>
                 <Button
                   variant="hero"
+                  size="lg"
                   className="flex-1"
                   onClick={handlePublish}
-                  disabled={isPublishing || !title.trim()}
+                  disabled={isPublishing || isAnalyzing || !title.trim()}
                 >
                   {isPublishing ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Send className="h-4 w-4 mr-2" />
                   )}
-                  {isPublishing ? "Publicerar..." : "Publicera"}
+                  {isPublishing ? "Skickar..." : "Rapportera"}
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 4: Success */}
+          {/* Step 3: Success */}
           {step === "success" && (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
               <div className="h-20 w-20 rounded-2xl bg-accent/20 flex items-center justify-center mb-6">
