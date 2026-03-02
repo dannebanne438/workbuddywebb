@@ -1,47 +1,22 @@
 
 
-# Snabbare avvikelserapportering: 3 steg
+## Exportera din kod via GitHub
 
-## Problem
-Nuvarande flode har 4 separata steg med manga formulärfält som bromsar rapporteringen:
-1. Ta bild (capture-skärm med knappar)
-2. AI analyserar (laddningsskärm)
-3. Redigera (rubrik, beskrivning, allvarlighetsgrad, kategori -- manuella fält)
-4. Bekräftelse (success-skärm)
+Du kan få ut all kod från projektet genom att koppla det till GitHub. Då skapas ett komplett repository med hela kodbasen som du kan ladda ner, dela eller använda som portfolio.
 
-## Nytt flöde: 3 steg
+### Så gör du
 
-```text
-STEG 1: Ta bild (kamera/galleri)
-STEG 2: Granska och skicka (AI-ifyllt, en knapp)
-STEG 3: Klart!
-```
+1. Klicka på projektnamnet uppe till vänster
+2. Välj **Settings**
+3. Gå till fliken **GitHub**
+4. Klicka **Connect project** och auktorisera Lovable på GitHub
+5. Klicka **Create Repository** — hela kodbasen pushas dit
 
-### Steg 1: Ta bild
-- Oförändrat -- kameraknapp och galleriknapp
+Efter det har du ett komplett GitHub-repo med all kod som du kan:
+- Dela som portfolio-länk
+- Klona och köra lokalt
+- Deploya var du vill
 
-### Steg 2: Granska och skicka (slår ihop "analyzing" + "edit")
-- Medan AI arbetar visas laddningsindikator OVANPÅ bilden (inte som en separat skärm)
-- När AI är klar visas resultatet direkt:
-  - Bilden som thumbnail
-  - AI-ifylld rubrik och beskrivning som redigerbar text (inte separata fält med labels -- bara texten direkt)
-  - Allvarlighetsgrad och kategori visas som klickbara chips (inte dropdowns) -- förifyllda av AI
-  - En stor "Rapportera"-knapp längst ner
-- Användaren behöver normalt bara trycka "Rapportera" direkt utan att ändra något
-
-### Steg 3: Klart
-- Kort bekräftelse med knapp för "Ta ny bild"
-
-## Tekniska ändringar
-
-### CameraView.tsx
-- Ta bort steget "analyzing" som separat vy -- slå ihop med "edit"
-- Ändra step-typen från `"capture" | "analyzing" | "edit" | "success"` till `"capture" | "review" | "success"`
-- I "review"-steget:
-  - Visa laddningsoverlay på bilden medan AI analyserar
-  - När klart: visa kompakt kort med bild, rubrik, beskrivning, severity/category som chips
-  - Severity och category blir horisontella chip-knappar istället för Select-dropdowns
-  - Rubrik och beskrivning renderas som inline-redigerbara fält (input utan synlig ram, ser ut som text)
-- Publicera-knappen aktiveras först när AI-analysen är klar
-- Inga andra filer påverkas
+### Inget kodändringar krävs
+Detta är en ren konfigurationsåtgärd — inga filer behöver ändras.
 
