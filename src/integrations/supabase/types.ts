@@ -548,6 +548,253 @@ export type Database = {
           },
         ]
       }
+      finance_expenses: {
+        Row: {
+          amount_excl_vat: number
+          amount_incl_vat: number | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          is_paid: boolean
+          is_personal_withdrawal: boolean
+          receipt_id: string | null
+          supplier_name: string
+          updated_at: string
+          vat_amount: number | null
+          vat_rate: number
+          workplace_id: string
+        }
+        Insert: {
+          amount_excl_vat?: number
+          amount_incl_vat?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_paid?: boolean
+          is_personal_withdrawal?: boolean
+          receipt_id?: string | null
+          supplier_name: string
+          updated_at?: string
+          vat_amount?: number | null
+          vat_rate?: number
+          workplace_id: string
+        }
+        Update: {
+          amount_excl_vat?: number
+          amount_incl_vat?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_paid?: boolean
+          is_personal_withdrawal?: boolean
+          receipt_id?: string | null
+          supplier_name?: string
+          updated_at?: string
+          vat_amount?: number | null
+          vat_rate?: number
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_expenses_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_income: {
+        Row: {
+          amount_excl_vat: number
+          amount_incl_vat: number | null
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          id: string
+          invoice_date: string
+          invoice_number: string | null
+          is_paid: boolean
+          service_description: string | null
+          updated_at: string
+          vat_amount: number | null
+          vat_rate: number
+          workplace_id: string
+        }
+        Insert: {
+          amount_excl_vat?: number
+          amount_incl_vat?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          is_paid?: boolean
+          service_description?: string | null
+          updated_at?: string
+          vat_amount?: number | null
+          vat_rate?: number
+          workplace_id: string
+        }
+        Update: {
+          amount_excl_vat?: number
+          amount_incl_vat?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          is_paid?: boolean
+          service_description?: string | null
+          updated_at?: string
+          vat_amount?: number | null
+          vat_rate?: number
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_income_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_receipts: {
+        Row: {
+          ai_parsed_data: Json | null
+          amount: number | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          is_processed: boolean
+          receipt_date: string | null
+          supplier_name: string | null
+          vat_amount: number | null
+          workplace_id: string
+        }
+        Insert: {
+          ai_parsed_data?: Json | null
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          is_processed?: boolean
+          receipt_date?: string | null
+          supplier_name?: string | null
+          vat_amount?: number | null
+          workplace_id: string
+        }
+        Update: {
+          ai_parsed_data?: Json | null
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          is_processed?: boolean
+          receipt_date?: string | null
+          supplier_name?: string | null
+          vat_amount?: number | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_receipts_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_settings: {
+        Row: {
+          default_vat_rate: number
+          id: string
+          updated_at: string
+          vat_account_deposited: number
+          workplace_id: string
+        }
+        Insert: {
+          default_vat_rate?: number
+          id?: string
+          updated_at?: string
+          vat_account_deposited?: number
+          workplace_id: string
+        }
+        Update: {
+          default_vat_rate?: number
+          id?: string
+          updated_at?: string
+          vat_account_deposited?: number
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_settings_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: true
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_vat_deposits: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          deposit_date: string
+          id: string
+          note: string | null
+          workplace_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          deposit_date?: string
+          id?: string
+          note?: string | null
+          workplace_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deposit_date?: string
+          id?: string
+          note?: string | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_vat_deposits_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       important_times: {
         Row: {
           created_at: string

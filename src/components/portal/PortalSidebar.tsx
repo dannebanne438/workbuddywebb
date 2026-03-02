@@ -26,9 +26,10 @@ import {
   Sparkles,
   FileText,
   Image,
+  Wallet,
 } from "lucide-react";
 
-type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features" | "finance";
 
 interface PortalSidebarProps {
   currentView?: PortalView;
@@ -63,6 +64,7 @@ export function PortalSidebar({ currentView = "camera", onViewChange }: PortalSi
   const adminItems = [
     { id: "employees" as const, label: "Personal", icon: Users, requiresAdmin: true },
     { id: "certificates" as const, label: "Certifikat", icon: Award, requiresAdmin: true },
+    { id: "finance" as const, label: "Ekonomi", icon: Wallet, requiresAdmin: true },
   ];
 
   const superAdminItems = [

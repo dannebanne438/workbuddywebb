@@ -14,6 +14,7 @@ import { CertificatesView } from "./views/CertificatesView";
 import { IncidentsView } from "./views/IncidentsView";
 import { DocumentsView } from "./views/DocumentsView";
 import { PhotoGalleryView } from "./views/PhotoGalleryView";
+import { FinanceView } from "./finance/FinanceView";
 import { PortalSidebar } from "./PortalSidebar";
 import { MobileNav } from "./MobileNav";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -31,7 +32,7 @@ import { useWorkplace } from "@/contexts/WorkplaceContext";
 import { isFeatureEnabled } from "@/lib/features";
 import { AlertTriangle } from "lucide-react";
 
-type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features" | "finance";
 
 const ONBOARDING_KEY = "workbuddy_onboarding_complete";
 
@@ -130,6 +131,8 @@ function PortalContentInner() {
         return <CertificatesView />;
       case "features":
         return <PresentationFeatureView />;
+      case "finance":
+        return <FinanceView />;
       case "admin":
         return <SuperAdminView onSelectWorkplace={handleSelectWorkplace} />;
       case "workplace-detail":
