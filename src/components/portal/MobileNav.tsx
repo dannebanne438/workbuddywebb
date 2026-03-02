@@ -27,7 +27,7 @@ import {
   Image,
 } from "lucide-react";
 
-type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features";
+type PortalView = "camera" | "schedule" | "checklists" | "routines" | "announcements" | "employees" | "settings" | "admin" | "workplace-detail" | "team-chat" | "dashboard" | "certificates" | "incidents" | "documents" | "photos" | "features" | "finance";
 
 interface MobileNavProps {
   currentView: PortalView;
@@ -53,6 +53,7 @@ const viewLabels: Record<PortalView, string> = {
   documents: "Dokument",
   photos: "Bildbank",
   features: "Funktioner",
+  finance: "Ekonomi",
 };
 
 export function MobileNav({ currentView, onViewChange, open, onOpenChange }: MobileNavProps) {
