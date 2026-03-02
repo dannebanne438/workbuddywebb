@@ -999,6 +999,83 @@ export type Database = {
           },
         ]
       }
+      invoice_settings: {
+        Row: {
+          address: string | null
+          bank_account: string | null
+          bank_name: string | null
+          bank_reference: string | null
+          bg_number: string | null
+          city: string | null
+          company_name: string | null
+          default_currency: string | null
+          email: string | null
+          footer_text: string | null
+          id: string
+          logo_url: string | null
+          org_number: string | null
+          payment_terms_days: number | null
+          pg_number: string | null
+          phone: string | null
+          postal_code: string | null
+          updated_at: string
+          website: string | null
+          workplace_id: string
+        }
+        Insert: {
+          address?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          bank_reference?: string | null
+          bg_number?: string | null
+          city?: string | null
+          company_name?: string | null
+          default_currency?: string | null
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          org_number?: string | null
+          payment_terms_days?: number | null
+          pg_number?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          updated_at?: string
+          website?: string | null
+          workplace_id: string
+        }
+        Update: {
+          address?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          bank_reference?: string | null
+          bg_number?: string | null
+          city?: string | null
+          company_name?: string | null
+          default_currency?: string | null
+          email?: string | null
+          footer_text?: string | null
+          id?: string
+          logo_url?: string | null
+          org_number?: string | null
+          payment_terms_days?: number | null
+          pg_number?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          updated_at?: string
+          website?: string | null
+          workplace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_settings_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: true
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
