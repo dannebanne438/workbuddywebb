@@ -240,6 +240,14 @@ serve(async (req) => {
       );
     }
 
+    // Verify workplace authorization
+    if (!isSuperAdmin && !adminWorkplaceIds.includes(workplace_id)) {
+      return new Response(JSON.stringify({ error: "Forbidden: Not authorized for this workplace" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get workplace info
     const { data: workplace, error: workplaceError } = await supabase
       .from("workplaces")
