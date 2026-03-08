@@ -134,7 +134,7 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ imageUrl: urlData.publicUrl }),
+          body: JSON.stringify({ imageUrl: signedData?.signedUrl || "" }),
         }
       );
 
