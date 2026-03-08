@@ -133,12 +133,12 @@ export function IncidentDetailView({ incidentId, onBack }: Props) {
     const { error: uploadErr } = await supabase.storage.from("photos").upload(path, file);
     if (uploadErr) { toast.error("Uppladdning misslyckades"); setUploading(false); return; }
 
-    const { data: urlData } = supabase.storage.from("photos").getPublicUrl(path);
+    const { data: signedData } = await supabase.storage.from("photos").createSignedUrl(path, 365 * 24 * 3600);
     const { error: insertErr } = await supabase.from("incident_evidence").insert({
       incident_id: incident.id,
       workplace_id: activeWorkplace.id,
       evidence_type: type,
-      image_url: urlData.publicUrl,
+      image_url: signedData?.signedUrl || path,
       uploaded_by: user.id,
       uploaded_by_name: profile?.full_name || profile?.email || "Okänd",
     });

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,15 +10,55 @@ function fmt(n: number) {
   return new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(n);
 }
 
+function escapeHtml(text: string): string {
+  if (!text) return "";
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Require auth
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify admin role
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+
+    const isAdmin = roles?.some(r => r.role === "super_admin" || r.role === "workplace_admin");
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden: Admin access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { companyName, month, income, expenses, totals } = await req.json();
 
     const timestamp = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Stockholm" });
 
-    // Build simple HTML-based PDF content
     const html = `
 <!DOCTYPE html>
 <html>
@@ -28,16 +69,14 @@ serve(async (req) => {
   table { width: 100%; border-collapse: collapse; margin: 15px 0; }
   th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
   th { background: #f5f5f5; }
-  .summary { display: flex; gap: 20px; margin: 20px 0; }
-  .summary-box { flex: 1; padding: 15px; background: #f9f9f9; border-radius: 8px; }
   .positive { color: #16a34a; }
   .negative { color: #dc2626; }
   .footer { margin-top: 40px; font-size: 12px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
 </style></head>
 <body>
-  <h1>Ekonomirapport — ${companyName || "Företag"}</h1>
-  <p><strong>Period:</strong> ${month}</p>
-  <p><strong>Genererad:</strong> ${timestamp}</p>
+  <h1>Ekonomirapport — ${escapeHtml(companyName || "Företag")}</h1>
+  <p><strong>Period:</strong> ${escapeHtml(month)}</p>
+  <p><strong>Genererad:</strong> ${escapeHtml(timestamp)}</p>
 
   <h2>Sammanställning</h2>
   <table>
@@ -55,9 +94,9 @@ serve(async (req) => {
     <tr><th>Datum</th><th>Kund</th><th>Faktura #</th><th>Exkl moms</th><th>Moms</th><th>Inkl moms</th><th>Betald</th></tr>
     ${(income || []).map((i: any) => `
     <tr>
-      <td>${i.invoice_date}</td>
-      <td>${i.customer_name}</td>
-      <td>${i.invoice_number || '–'}</td>
+      <td>${escapeHtml(i.invoice_date)}</td>
+      <td>${escapeHtml(i.customer_name)}</td>
+      <td>${escapeHtml(i.invoice_number || '–')}</td>
       <td>${fmt(Number(i.amount_excl_vat))}</td>
       <td>${fmt(Number(i.vat_amount))}</td>
       <td>${fmt(Number(i.amount_incl_vat))}</td>
@@ -70,9 +109,9 @@ serve(async (req) => {
     <tr><th>Datum</th><th>Leverantör</th><th>Kategori</th><th>Exkl moms</th><th>Moms</th><th>Inkl moms</th><th>Eget uttag</th></tr>
     ${(expenses || []).map((e: any) => `
     <tr>
-      <td>${e.expense_date}</td>
-      <td>${e.supplier_name}</td>
-      <td>${e.category || '–'}</td>
+      <td>${escapeHtml(e.expense_date)}</td>
+      <td>${escapeHtml(e.supplier_name)}</td>
+      <td>${escapeHtml(e.category || '–')}</td>
       <td>${fmt(Number(e.amount_excl_vat))}</td>
       <td>${fmt(Number(e.vat_amount))}</td>
       <td>${fmt(Number(e.amount_incl_vat))}</td>
@@ -87,12 +126,11 @@ serve(async (req) => {
   </table>
 
   <div class="footer">
-    <p>Genererad av WorkBuddy HQ — ${timestamp}</p>
+    <p>Genererad av WorkBuddy — ${escapeHtml(timestamp)}</p>
   </div>
 </body>
 </html>`;
 
-    // Return HTML for client-side PDF generation (print to PDF)
     return new Response(JSON.stringify({ html, timestamp }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

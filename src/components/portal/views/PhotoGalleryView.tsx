@@ -92,11 +92,12 @@ export function PhotoGalleryView() {
         toast.error(`Kunde inte ladda upp ${file.name}`);
         continue;
       }
-      const { data: urlData } = supabase.storage.from("photos").getPublicUrl(filePath);
+      // Use signed URL since bucket is private
+      const { data: signedData } = await supabase.storage.from("photos").createSignedUrl(filePath, 365 * 24 * 3600);
       await supabase.from("photos").insert({
         workplace_id: activeWorkplace.id,
         title: file.name.replace(/\.[^.]+$/, ""),
-        image_url: urlData.publicUrl,
+        image_url: signedData?.signedUrl || filePath,
         category: "Pedagogisk dokumentation",
         uploaded_by: user.id,
         uploaded_by_name: profile?.full_name || profile?.email || "Användare",

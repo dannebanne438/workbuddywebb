@@ -80,11 +80,13 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
       const filePath = `${activeWorkplace.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from("photos").upload(filePath, file);
       if (uploadError) return;
-      const { data: urlData } = supabase.storage.from("photos").getPublicUrl(filePath);
+      // Store the signed URL in the database since bucket is private
+      const { data: signedData } = await supabase.storage.from("photos").createSignedUrl(filePath, 365 * 24 * 3600);
+      const imageUrl = signedData?.signedUrl || filePath;
       await supabase.from("photos").insert({
         workplace_id: activeWorkplace.id,
         title: file.name.replace(/\.[^.]+$/, ""),
-        image_url: urlData.publicUrl,
+        image_url: imageUrl,
         category: "Fotodokumentation",
         uploaded_by: user.id,
         uploaded_by_name: profile?.full_name || profile?.email || "Användare",
@@ -112,15 +114,17 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
     }
 
     try {
-      const fileName = `${Date.now()}-${file.name}`;
+      // Upload to workplace-scoped path for tenant isolation
+      const fileName = `${activeWorkplace!.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("camera-uploads")
         .upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
+      // Use signed URL since bucket is private
+      const { data: signedData } = await supabase.storage
         .from("camera-uploads")
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`,
@@ -130,7 +134,7 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ imageUrl: urlData.publicUrl }),
+          body: JSON.stringify({ imageUrl: signedData?.signedUrl || "" }),
         }
       );
 
@@ -161,11 +165,15 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
 
     setIsPublishing(true);
     try {
+      // Use the image URL from the upload we already did in analyzeImage
+      // instead of listing the bucket globally (cross-tenant risk)
       let imageUrl: string | null = null;
-      const { data: listData } = await supabase.storage.from("camera-uploads").list("", { sortBy: { column: "created_at", order: "desc" }, limit: 1 });
-      if (listData?.[0]) {
-        const { data: urlData } = supabase.storage.from("camera-uploads").getPublicUrl(listData[0].name);
-        imageUrl = urlData.publicUrl;
+      if (imageFile && activeWorkplace?.id) {
+        // Use signed URL since bucket is private
+        const { data: signedData } = await supabase.storage
+          .from("camera-uploads")
+          .createSignedUrl(`${activeWorkplace.id}/${imageFile.name}`, 365 * 24 * 3600);
+        imageUrl = signedData?.signedUrl || null;
       }
 
       if (postType === "announcement") {
