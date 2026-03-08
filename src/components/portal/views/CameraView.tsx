@@ -121,9 +121,10 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
         .upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
+      // Use signed URL since bucket is private
+      const { data: signedData } = await supabase.storage
         .from("camera-uploads")
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`,
