@@ -29,8 +29,9 @@ export function FinanceReceipts() {
       const { error: uploadError } = await supabase.storage.from("camera-uploads").upload(path, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("camera-uploads").getPublicUrl(path);
-      const imageUrl = urlData.publicUrl;
+      // Use signed URL since bucket is private
+      const { data: signedData } = await supabase.storage.from("camera-uploads").createSignedUrl(path, 3600);
+      const imageUrl = signedData?.signedUrl || path;
 
       // AI analysis
       setUploading(false);

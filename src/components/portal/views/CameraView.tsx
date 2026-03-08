@@ -169,12 +169,11 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
       // instead of listing the bucket globally (cross-tenant risk)
       let imageUrl: string | null = null;
       if (imageFile && activeWorkplace?.id) {
-        // The image was already uploaded to camera-uploads in analyzeImage
-        // Use the same path pattern to construct the URL
-        const { data: urlData } = supabase.storage
+        // Use signed URL since bucket is private
+        const { data: signedData } = await supabase.storage
           .from("camera-uploads")
-          .getPublicUrl(`${activeWorkplace.id}/${imageFile.name}`);
-        imageUrl = urlData.publicUrl;
+          .createSignedUrl(`${activeWorkplace.id}/${imageFile.name}`, 365 * 24 * 3600);
+        imageUrl = signedData?.signedUrl || null;
       }
 
       if (postType === "announcement") {
