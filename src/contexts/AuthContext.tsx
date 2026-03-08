@@ -131,8 +131,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      // Use rate-limited edge function for login
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("auth-login", {
+        body: { email, password },
+      });
+
+      if (fnError) {
+        // If edge function is unavailable, fall back to direct auth
+        console.warn("Rate-limited login unavailable, falling back:", fnError.message);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        return { error };
+      }
+
+      if (fnData?.error) {
+        return { error: new Error(fnData.error) };
+      }
+
+      if (fnData?.session) {
+        // Set the session from the edge function response
+        await supabase.auth.setSession({
+          access_token: fnData.session.access_token,
+          refresh_token: fnData.session.refresh_token,
+        });
+      }
+
+      return { error: null };
+    } catch (err) {
+      // Fallback to direct auth on network errors
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string, workplaceId: string) => {
