@@ -220,6 +220,17 @@ serve(async (req) => {
       });
     }
 
+    const userId = userData.user.id;
+
+    // Verify admin role
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role, workplace_id")
+      .eq("user_id", userId);
+
+    const isSuperAdmin = roles?.some(r => r.role === "super_admin");
+    const adminWorkplaceIds = roles?.filter(r => r.role === "workplace_admin").map(r => r.workplace_id) || [];
+
     const { workplace_id, start_date, end_date } = await req.json();
 
     if (!workplace_id || !start_date || !end_date) {
