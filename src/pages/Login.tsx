@@ -166,7 +166,9 @@ const Login = () => {
       if (authMode === "login") {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes("Invalid login")) {
+          if (error.message.includes("Too many login attempts")) {
+            setErrors({ email: "För många inloggningsförsök. Vänta 15 minuter." });
+          } else if (error.message.includes("Invalid login")) {
             setErrors({ email: "Fel e-post eller lösenord" });
           } else {
             toast({
