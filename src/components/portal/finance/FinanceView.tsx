@@ -9,6 +9,7 @@ import { FinanceReceipts } from "./FinanceReceipts";
 import { FinanceVatCenter } from "./FinanceVatCenter";
 import { FinanceExport } from "./FinanceExport";
 import { InvoiceGenerator } from "./InvoiceGenerator";
+import { QuoteToolView } from "../quotes/QuoteToolView";
 
 export function FinanceView() {
   const { isSuperAdmin, isWorkplaceAdmin } = useAuth();
@@ -35,13 +36,14 @@ export function FinanceView() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-7">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="income">Inkomster</TabsTrigger>
             <TabsTrigger value="expenses">Utgifter</TabsTrigger>
             <TabsTrigger value="receipts">Kvitton</TabsTrigger>
             <TabsTrigger value="vat">Momscenter</TabsTrigger>
             <TabsTrigger value="invoices">Fakturor</TabsTrigger>
+            <TabsTrigger value="quotes">Offerter</TabsTrigger>
             <TabsTrigger value="export">Export</TabsTrigger>
           </TabsList>
 
@@ -51,6 +53,7 @@ export function FinanceView() {
           <TabsContent value="receipts"><FinanceReceipts /></TabsContent>
           <TabsContent value="vat"><FinanceVatCenter /></TabsContent>
           <TabsContent value="invoices"><InvoiceGenerator /></TabsContent>
+          <TabsContent value="quotes"><QuoteToolView /></TabsContent>
           <TabsContent value="export"><FinanceExport /></TabsContent>
         </Tabs>
       </div>
