@@ -55,8 +55,8 @@ export function AddIncidentDialog({ open, onOpenChange, onAdded }: AddIncidentDi
         setLoading(false);
         return;
       }
-      const { data: urlData } = supabase.storage.from("camera-uploads").getPublicUrl(fileName);
-      imageUrl = urlData.publicUrl;
+      const { data: signedData } = await supabase.storage.from("camera-uploads").createSignedUrl(fileName, 365 * 24 * 3600);
+      imageUrl = signedData?.signedUrl || null;
     }
 
     const { error } = await supabase.from("incidents").insert({

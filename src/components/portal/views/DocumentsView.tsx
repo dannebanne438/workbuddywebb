@@ -63,12 +63,12 @@ export function DocumentsView() {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("documents").getPublicUrl(filePath);
+    const { data: signedData } = await supabase.storage.from("documents").createSignedUrl(filePath, 365 * 24 * 3600);
 
     const { error: dbError } = await supabase.from("documents").insert({
       workplace_id: activeWorkplace.id,
       title: file.name,
-      file_url: urlData.publicUrl,
+      file_url: signedData?.signedUrl || filePath,
       file_type: file.type,
       file_size: file.size,
       uploaded_by: user.id,
