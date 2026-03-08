@@ -1076,6 +1076,33 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          id: string
+          identifier: string
+          ip_address: string | null
+          success: boolean
+        }
+        Insert: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          identifier: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1511,6 +1538,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          _attempt_type: string
+          _identifier: string
+          _max_attempts?: number
+          _window_minutes?: number
+        }
+        Returns: boolean
+      }
+      cleanup_old_login_attempts: { Args: never; Returns: undefined }
       get_user_workplace_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -1531,6 +1568,15 @@ export type Database = {
       is_workplace_admin: {
         Args: { _user_id: string; _workplace_id: string }
         Returns: boolean
+      }
+      record_login_attempt: {
+        Args: {
+          _attempt_type: string
+          _identifier: string
+          _ip_address?: string
+          _success: boolean
+        }
+        Returns: undefined
       }
       verify_invite_code: {
         Args: { _code: string }
