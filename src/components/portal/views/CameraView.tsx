@@ -80,11 +80,13 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
       const filePath = `${activeWorkplace.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from("photos").upload(filePath, file);
       if (uploadError) return;
-      const { data: urlData } = supabase.storage.from("photos").getPublicUrl(filePath);
+      // Store the signed URL in the database since bucket is private
+      const { data: signedData } = await supabase.storage.from("photos").createSignedUrl(filePath, 365 * 24 * 3600);
+      const imageUrl = signedData?.signedUrl || filePath;
       await supabase.from("photos").insert({
         workplace_id: activeWorkplace.id,
         title: file.name.replace(/\.[^.]+$/, ""),
-        image_url: urlData.publicUrl,
+        image_url: imageUrl,
         category: "Fotodokumentation",
         uploaded_by: user.id,
         uploaded_by_name: profile?.full_name || profile?.email || "Användare",
