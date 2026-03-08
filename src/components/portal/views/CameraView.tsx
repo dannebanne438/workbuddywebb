@@ -112,7 +112,8 @@ export function CameraView({ defaultType, onSuccess }: CameraViewProps = {}) {
     }
 
     try {
-      const fileName = `${Date.now()}-${file.name}`;
+      // Upload to workplace-scoped path for tenant isolation
+      const fileName = `${activeWorkplace!.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("camera-uploads")
         .upload(fileName, file);
