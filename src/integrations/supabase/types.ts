@@ -1362,6 +1362,47 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          result: string
+          user_id: string | null
+          workplace_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          result?: string
+          user_id?: string | null
+          workplace_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          result?: string
+          user_id?: string | null
+          workplace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_events_workplace_id_fkey"
+            columns: ["workplace_id"]
+            isOneToOne: false
+            referencedRelation: "workplaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_messages: {
         Row: {
           content: string
