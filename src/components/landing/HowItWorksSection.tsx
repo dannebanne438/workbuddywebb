@@ -71,10 +71,10 @@ export const HowItWorksSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Så fungerar det
+            En enklare digital arbetsplats för företag
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Fem enkla steg till en smartare arbetsplats
+            Kom igång med WorkBuddy i fem enkla steg – från platskod till full digital kontroll över kommunikation och personal.
           </p>
         </div>
 

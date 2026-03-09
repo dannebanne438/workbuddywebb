@@ -24,11 +24,11 @@ export const CTASection = () => {
           </div>
           
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-            Redo att ge din arbetsplats en digital kollega?
+            Redo att förbättra internkommunikationen i ert företag?
           </h2>
           
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            Boka en kostnadsfri demo så visar vi hur WorkBuddy kan hjälpa just er arbetsplats.
+            Boka en kostnadsfri demo och se hur WorkBuddy kan fungera som er digitala arbetsplattform – med verktyg för personalhantering, schema och kommunikation.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

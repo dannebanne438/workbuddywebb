@@ -67,10 +67,10 @@ export const FeaturesSection = () => {
             Allt på en plats
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Verktyg för en smidigare arbetsdag
+            Samla internkommunikation och personalinformation på ett ställe
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            WorkBuddy samlar allt som behövs för att skiftarbete ska fungera smidigt.
+            WorkBuddy är ett komplett verktyg för företagskommunikation och personalhantering – schema, rutiner, checklistor och AI-stöd i en och samma plattform.
           </p>
         </div>
 

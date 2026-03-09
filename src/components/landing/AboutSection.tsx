@@ -30,7 +30,7 @@ export const AboutSection = () => {
             Om oss
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Byggt av människor som förstår
+            Byggt av människor som förstår den moderna arbetsplatsen
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             WorkBuddy skapades inte på ett kontor långt från verkligheten — utan

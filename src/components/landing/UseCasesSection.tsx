@@ -48,10 +48,10 @@ export const UseCasesSection = () => {
             Passar många branscher
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Byggd för arbetsplatser med skiftarbete
+            Verktyg för personalhantering i alla branscher
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Oavsett bransch – om ni har pass, rutiner och personal som behöver info, passar WorkBuddy.
+            Oavsett bransch – om ni har pass, rutiner och personal som behöver snabb tillgång till information, är WorkBuddy rätt arbetsplattform för ert företag.
           </p>
         </div>
 
