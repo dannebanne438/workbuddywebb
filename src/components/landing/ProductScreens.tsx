@@ -101,7 +101,7 @@ export const DashboardScreen = ({ className = "" }: { className?: string }) => (
             { label: "Aktiva idag", value: "12", trend: "+2" },
             { label: "Öppna ärenden", value: "3", trend: "-1" },
             { label: "Checklistor klara", value: "8/10", trend: "" },
-            { label: "Certifikat ⚠️", value: "2", trend: "" },
+            { label: "Certifikat", value: "2", trend: "", warn: true },
           ].map((kpi) => (
             <div key={kpi.label} className="bg-muted/30 rounded-lg p-3 border border-border/40">
               <div className="flex items-baseline gap-1.5">
