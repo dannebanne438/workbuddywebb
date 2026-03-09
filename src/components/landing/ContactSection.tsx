@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Send, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ContactSection = () => {
@@ -21,10 +21,7 @@ export const ContactSection = () => {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +29,6 @@ export const ContactSection = () => {
     setIsSubmitting(true);
 
     try {
-      // Save to database
       const { error } = await supabase.from("contact_leads").insert({
         company: formData.company,
         contact_person: formData.contactPerson,
@@ -44,8 +40,7 @@ export const ContactSection = () => {
 
       if (error) throw error;
 
-      // Send email notification
-      const { error: emailError } = await supabase.functions.invoke("send-contact-notification", {
+      await supabase.functions.invoke("send-contact-notification", {
         body: {
           company: formData.company,
           contactPerson: formData.contactPerson,
@@ -54,165 +49,82 @@ export const ContactSection = () => {
           workplaceType: formData.workplaceType || null,
           message: formData.message || null,
         },
-      });
-
-      if (emailError) {
-        console.error("Email notification failed:", emailError);
-        // Don't fail the submission if email fails - data is already saved
-      }
+      }).catch(console.error);
 
       setIsSubmitted(true);
-      toast({
-        title: "Tack för ditt intresse!",
-        description: "Vi återkommer inom kort.",
-      });
+      toast({ title: "Tack för ditt intresse!", description: "Vi återkommer inom kort." });
 
-      // Reset form after showing success
       setTimeout(() => {
-        setFormData({
-          company: "",
-          contactPerson: "",
-          email: "",
-          phone: "",
-          workplaceType: "",
-          message: "",
-        });
+        setFormData({ company: "", contactPerson: "", email: "", phone: "", workplaceType: "", message: "" });
         setIsSubmitted(false);
       }, 3000);
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Något gick fel",
-        description: "Försök igen senare.",
-      });
+    } catch {
+      toast({ variant: "destructive", title: "Något gick fel", description: "Försök igen senare." });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section id="contact" className="py-24 lg:py-32 bg-card">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Boka en demo av WorkBuddy för ert företag
+    <section id="contact" className="landing-section bg-muted/30 border-t border-border">
+      <div className="landing-container">
+        <div className="max-w-lg mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
+              Boka en demo
             </h2>
-            <p className="text-lg text-muted-foreground">
-              Se hur WorkBuddy förbättrar internkommunikation och personalhantering på er arbetsplats – helt kostnadsfritt.
+            <p className="text-[14px] text-muted-foreground">
+              Se hur WorkBuddy förbättrar internkommunikation och personalhantering på er arbetsplats.
             </p>
           </div>
 
           {isSubmitted ? (
-            <div className="bg-secondary rounded-2xl p-12 text-center animate-scale-in">
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 mb-6">
-                <CheckCircle className="h-8 w-8 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Tack för ditt meddelande!
-              </h3>
-              <p className="text-muted-foreground">
-                Vi återkommer till dig så snart vi kan.
-              </p>
+            <div className="text-center py-12">
+              <CheckCircle className="h-10 w-10 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-1">Tack!</h3>
+              <p className="text-sm text-muted-foreground">Vi återkommer till dig så snart vi kan.</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="company">Företag *</Label>
-                  <Input
-                    id="company"
-                    name="company"
-                    value={formData.company}
-                    onChange={handleChange}
-                    placeholder="Företagsnamn"
-                    required
-                    className="h-12"
-                  />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="company" className="text-[13px]">Företag *</Label>
+                  <Input id="company" name="company" value={formData.company} onChange={handleChange} placeholder="Företagsnamn" required className="h-10 text-[13px]" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contactPerson">Kontaktperson *</Label>
-                  <Input
-                    id="contactPerson"
-                    name="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={handleChange}
-                    placeholder="Ditt namn"
-                    required
-                    className="h-12"
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="contactPerson" className="text-[13px]">Kontaktperson *</Label>
+                  <Input id="contactPerson" name="contactPerson" value={formData.contactPerson} onChange={handleChange} placeholder="Ditt namn" required className="h-10 text-[13px]" />
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-post *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="namn@foretag.se"
-                    required
-                    className="h-12"
-                  />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-[13px]">E-post *</Label>
+                  <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="namn@foretag.se" required className="h-10 text-[13px]" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefon</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="070-000 00 00"
-                    className="h-12"
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-[13px]">Telefon</Label>
+                  <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="070-000 00 00" className="h-10 text-[13px]" />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="workplaceType">Typ av arbetsplats</Label>
-                <Input
-                  id="workplaceType"
-                  name="workplaceType"
-                  value={formData.workplaceType}
-                  onChange={handleChange}
-                  placeholder="T.ex. restaurang, lager, butik, kontor..."
-                  className="h-12"
-                />
+              <div className="space-y-1.5">
+                <Label htmlFor="workplaceType" className="text-[13px]">Typ av arbetsplats</Label>
+                <Input id="workplaceType" name="workplaceType" value={formData.workplaceType} onChange={handleChange} placeholder="T.ex. restaurang, lager, butik, kontor..." className="h-10 text-[13px]" />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="message">Meddelande</Label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Berätta gärna mer om er arbetsplats och vad ni söker..."
-                  rows={4}
-                  className="resize-none"
-                />
+              <div className="space-y-1.5">
+                <Label htmlFor="message" className="text-[13px]">Meddelande</Label>
+                <Textarea id="message" name="message" value={formData.message} onChange={handleChange} placeholder="Berätta gärna mer om er arbetsplats..." rows={3} className="resize-none text-[13px]" />
               </div>
 
-              <Button
-                type="submit"
-                variant="hero"
-                size="xl"
-                className="w-full"
-                disabled={isSubmitting}
-              >
+              <Button type="submit" className="w-full h-10 rounded-lg text-[13px]" disabled={isSubmitting}>
                 {isSubmitting ? (
-                  <>
-                    <div className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    Skickar...
-                  </>
+                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                 ) : (
                   <>
                     Boka genomgång
-                    <Send className="h-5 w-5" />
+                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                   </>
                 )}
               </Button>
