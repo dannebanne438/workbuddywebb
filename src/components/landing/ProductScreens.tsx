@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { Home, Calendar, MessageSquare, MoreHorizontal, Camera, Battery, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // Browser chrome wrapper
