@@ -405,10 +405,15 @@ export const MobileScreen = ({ className = "" }: { className?: string }) => (
       </div>
       {/* Bottom nav */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-around px-4 py-2.5 border-t border-border bg-background">
-        {["Hem", "Schema", "Chat", "Mer"].map((n, i) => (
-          <div key={n} className={`text-center ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
-            <div className="text-[14px] mb-0.5">{["🏠", "📅", "💬", "⋯"][i]}</div>
-            <div className="text-[8px] font-medium">{n}</div>
+        {[
+          { name: "Hem", icon: Home },
+          { name: "Schema", icon: Calendar },
+          { name: "Chat", icon: MessageSquare },
+          { name: "Mer", icon: MoreHorizontal },
+        ].map((item, i) => (
+          <div key={item.name} className={`text-center flex flex-col items-center ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
+            <item.icon className="w-4 h-4 mb-0.5" />
+            <div className="text-[8px] font-medium">{item.name}</div>
           </div>
         ))}
       </div>
