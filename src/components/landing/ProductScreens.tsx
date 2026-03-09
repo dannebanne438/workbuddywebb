@@ -333,7 +333,7 @@ export const IncidentScreen = ({ className = "" }: { className?: string }) => (
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="w-14 h-14 rounded-md bg-muted border border-border flex items-center justify-center">
-              <span className="text-[9px] text-muted-foreground">📷</span>
+              <Camera className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
           ))}
           <div className="flex-1 text-[9px] text-muted-foreground flex items-center px-2">
