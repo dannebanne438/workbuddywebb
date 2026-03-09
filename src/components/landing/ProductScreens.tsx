@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { Home, Calendar, MessageSquare, MoreHorizontal, Camera, Battery, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // Browser chrome wrapper
@@ -100,7 +101,7 @@ export const DashboardScreen = ({ className = "" }: { className?: string }) => (
             { label: "Aktiva idag", value: "12", trend: "+2" },
             { label: "Öppna ärenden", value: "3", trend: "-1" },
             { label: "Checklistor klara", value: "8/10", trend: "" },
-            { label: "Certifikat ⚠️", value: "2", trend: "" },
+            { label: "Certifikat", value: "2", trend: "", warn: true },
           ].map((kpi) => (
             <div key={kpi.label} className="bg-muted/30 rounded-lg p-3 border border-border/40">
               <div className="flex items-baseline gap-1.5">
@@ -111,7 +112,10 @@ export const DashboardScreen = ({ className = "" }: { className?: string }) => (
                   </span>
                 )}
               </div>
-              <div className="text-[9px] text-muted-foreground mt-1.5">{kpi.label}</div>
+              <div className="text-[9px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                {(kpi as any).warn && <AlertTriangle className="w-2.5 h-2.5 text-destructive" />}
+                {kpi.label}
+              </div>
             </div>
           ))}
         </div>
@@ -329,7 +333,7 @@ export const IncidentScreen = ({ className = "" }: { className?: string }) => (
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="w-14 h-14 rounded-md bg-muted border border-border flex items-center justify-center">
-              <span className="text-[9px] text-muted-foreground">📷</span>
+              <Camera className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
           ))}
           <div className="flex-1 text-[9px] text-muted-foreground flex items-center px-2">
@@ -348,9 +352,9 @@ export const MobileScreen = ({ className = "" }: { className?: string }) => (
       {/* Status bar */}
       <div className="flex justify-between px-5 py-1 text-[8px] text-muted-foreground">
         <span>14:32</span>
-        <div className="flex gap-1 items-center">
+        <div className="flex gap-1.5 items-center">
           <span>5G</span>
-          <span>🔋</span>
+          <Battery className="w-3 h-3" />
         </div>
       </div>
       {/* App header */}
@@ -401,10 +405,15 @@ export const MobileScreen = ({ className = "" }: { className?: string }) => (
       </div>
       {/* Bottom nav */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-around px-4 py-2.5 border-t border-border bg-background">
-        {["Hem", "Schema", "Chat", "Mer"].map((n, i) => (
-          <div key={n} className={`text-center ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
-            <div className="text-[14px] mb-0.5">{["🏠", "📅", "💬", "⋯"][i]}</div>
-            <div className="text-[8px] font-medium">{n}</div>
+        {[
+          { name: "Hem", icon: Home },
+          { name: "Schema", icon: Calendar },
+          { name: "Chat", icon: MessageSquare },
+          { name: "Mer", icon: MoreHorizontal },
+        ].map((item, i) => (
+          <div key={item.name} className={`text-center flex flex-col items-center ${i === 0 ? "text-primary" : "text-muted-foreground"}`}>
+            <item.icon className="w-4 h-4 mb-0.5" />
+            <div className="text-[8px] font-medium">{item.name}</div>
           </div>
         ))}
       </div>
