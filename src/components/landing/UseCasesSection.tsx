@@ -1,89 +1,112 @@
-import { Building2, Utensils, ShoppingBag, Factory, Hotel, Dumbbell } from "lucide-react";
+import { useState } from "react";
 
-const useCases = [
+const industries = [
   {
-    icon: Building2,
-    title: "Säkerhetsbolag",
-    description: "Väktare får svar på rutiner, rondering och kontaktinfo direkt.",
-    example: "\"Vad ska jag göra vid larm i byggnad C?\"",
+    id: "security",
+    name: "Säkerhetsföretag",
+    headline: "Rondering, larm och incidentrapporter – i ett system",
+    description: "Väktare får svar på rutiner direkt i mobilen. Incidenter dokumenteras med foto, tidsstämpel och GPS. Chefer ser allt i realtid.",
+    features: ["AI som svarar på larmrutiner", "Incidentrapporter med beviskedja", "Certifikathantering med påminnelser", "Skiftschema med rollfördelning"],
   },
   {
-    icon: Utensils,
-    title: "Restauranger",
-    description: "Kökspersonal och serveringspersonal får schema och checklista.",
-    example: "\"Vem jobbar kväll idag?\"",
+    id: "staffing",
+    name: "Bemanning",
+    headline: "Hundratals konsulter. Tiotals arbetsplatser. En plattform.",
+    description: "Ny personal får onboarding direkt. Schemat uppdateras i realtid. Ingen faller mellan stolarna.",
+    features: ["Automatisk onboarding per arbetsplats", "Schema synligt för alla konsulter", "Checklistor för varje ny placering", "Team-chat per arbetsgrupp"],
   },
   {
-    icon: ShoppingBag,
-    title: "Butiker",
-    description: "Kassapersonal får öppningsrutiner och prisinfo snabbt.",
-    example: "\"Hur gör vi vid reklamation?\"",
+    id: "hotel",
+    name: "Hotell",
+    headline: "Städscheman, gästinfo och receptionsrutiner – samlat",
+    description: "Receptionen vet vilka rum som ska städas. Housekeeping bockar av i realtid. Alla får samma information.",
+    features: ["Dagliga checklistor för housekeeping", "Rutiner per avdelning", "Meddelanden till hela teamet", "Dokumentation av avvikelser"],
   },
   {
-    icon: Factory,
-    title: "Lager & logistik",
-    description: "Lagerpersonal kan kolla leveranstider och säkerhetsrutiner.",
-    example: "\"När kommer nästa leverans?\"",
-  },
-  {
-    icon: Hotel,
-    title: "Hotell",
-    description: "Receptionen får städschema och gästinformation.",
-    example: "\"Vilka rum ska städas först idag?\"",
-  },
-  {
-    icon: Dumbbell,
-    title: "Gym & Fitness",
-    description: "Instruktörer och personal får passinfo och städrutiner.",
-    example: "\"Vilka gruppträningar finns idag?\"",
+    id: "gym",
+    name: "Gym & fitness",
+    headline: "Passinfo, städrutiner och öppningsrutiner – digitalt",
+    description: "Instruktörer ser gruppträningsschema. Personal får städrutiner och ansvarsfördelning. Inga papperslappar.",
+    features: ["Schema för pass och personal", "Öppnings- och stängningsrutiner", "Kontaktlista för leverantörer", "AI-assistent för vanliga frågor"],
   },
 ];
 
 export const UseCasesSection = () => {
+  const [active, setActive] = useState(0);
+  const current = industries[active];
+
   return (
-    <section className="py-24 lg:py-32 bg-card">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <span className="text-sm font-medium text-accent mb-2 block">
-            Passar många branscher
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+    <section id="use-cases" className="landing-section bg-background border-t border-border">
+      <div className="landing-container">
+        <div className="mb-16">
+          <div className="landing-badge mb-4">Branscher</div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">
             Verktyg för personalhantering i alla branscher
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Oavsett bransch – om ni har pass, rutiner och personal som behöver snabb tillgång till information, är WorkBuddy rätt arbetsplattform för ert företag.
+          <p className="text-muted-foreground text-base max-w-xl">
+            WorkBuddy anpassas efter varje arbetsplats. Här är hur det används i praktiken.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {useCases.map((useCase, index) => {
-            const Icon = useCase.icon;
-            return (
-              <div
-                key={index}
-                className="group relative p-6 rounded-2xl bg-background border border-border hover:border-accent/30 transition-all duration-300"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl wb-gradient-accent flex items-center justify-center shrink-0">
-                    <Icon className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-1">
-                      {useCase.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-3">
-                      {useCase.description}
-                    </p>
-                    <div className="bg-secondary rounded-lg px-3 py-2">
-                      <p className="text-sm italic text-foreground/80">
-                        {useCase.example}
-                      </p>
-                    </div>
-                  </div>
+        {/* Industry tabs */}
+        <div className="flex gap-1 mb-10 overflow-x-auto pb-2">
+          {industries.map((ind, i) => (
+            <button
+              key={ind.id}
+              onClick={() => setActive(i)}
+              className={`px-4 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-all ${
+                i === active
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              {ind.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Active industry */}
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          <div>
+            <h3 className="text-2xl font-bold text-foreground mb-3 tracking-tight">
+              {current.headline}
+            </h3>
+            <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">
+              {current.description}
+            </p>
+            <div className="space-y-3">
+              {current.features.map((f, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                  <span className="text-[14px] text-foreground">{f}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Simple product frame */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-border bg-muted/30">
+              <div className="w-2 h-2 rounded-full bg-border" />
+              <div className="w-2 h-2 rounded-full bg-border" />
+              <div className="w-2 h-2 rounded-full bg-border" />
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                WorkBuddy → {current.name}
               </div>
-            );
-          })}
+              <div className="space-y-2">
+                {current.features.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-muted/40 border border-border/50">
+                    <div className="w-3.5 h-3.5 rounded bg-primary/20 flex items-center justify-center">
+                      <svg className="w-2 h-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <span className="text-[12px] text-foreground">{f}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
