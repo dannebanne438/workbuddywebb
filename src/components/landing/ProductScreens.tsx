@@ -112,7 +112,10 @@ export const DashboardScreen = ({ className = "" }: { className?: string }) => (
                   </span>
                 )}
               </div>
-              <div className="text-[9px] text-muted-foreground mt-1.5">{kpi.label}</div>
+              <div className="text-[9px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                {(kpi as any).warn && <AlertTriangle className="w-2.5 h-2.5 text-destructive" />}
+                {kpi.label}
+              </div>
             </div>
           ))}
         </div>
