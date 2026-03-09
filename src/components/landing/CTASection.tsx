@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Reveal } from "./animations";
 
 export const CTASection = () => {
   const scrollToContact = () => {
@@ -7,23 +9,26 @@ export const CTASection = () => {
   };
 
   return (
-    <section className="py-24 lg:py-32 bg-background border-t border-border">
-      <div className="landing-container text-center">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-5">
-          Redo att testa?
-        </h2>
-        <p className="text-base text-muted-foreground max-w-md mx-auto mb-8">
-          Boka en kostnadsfri demo och se hur WorkBuddy kan fungera för just er arbetsplats.
-        </p>
-        <div className="flex items-center justify-center gap-3">
-          <Button size="lg" className="rounded-lg h-11 px-6 text-sm" onClick={scrollToContact}>
-            Boka demo
-            <ArrowRight className="h-4 w-4 ml-1.5" />
-          </Button>
-          <Button variant="outline" size="lg" className="rounded-lg h-11 px-6 text-sm" onClick={scrollToContact}>
-            Ställ en fråga
-          </Button>
-        </div>
+    <section className="py-24 lg:py-32 bg-background border-t border-border relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.04)_0%,transparent_70%)] pointer-events-none" />
+      <div className="landing-container text-center relative z-10">
+        <Reveal>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-5">
+            Redo att testa?
+          </h2>
+          <p className="text-base text-muted-foreground max-w-md mx-auto mb-8">
+            Boka en kostnadsfri demo och se hur WorkBuddy kan fungera för just er arbetsplats.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Button size="lg" className="rounded-lg h-11 px-6 text-sm group" onClick={scrollToContact}>
+              Boka demo
+              <ArrowRight className="h-4 w-4 ml-1.5 transition-transform group-hover:translate-x-0.5" />
+            </Button>
+            <Button variant="outline" size="lg" className="rounded-lg h-11 px-6 text-sm" onClick={scrollToContact}>
+              Ställ en fråga
+            </Button>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
