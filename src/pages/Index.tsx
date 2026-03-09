@@ -8,6 +8,7 @@ import { TrustSection } from "@/components/landing/TrustSection";
 import { AboutSection } from "@/components/landing/AboutSection";
 import { CTASection } from "@/components/landing/CTASection";
 import { ContactSection } from "@/components/landing/ContactSection";
+import { FAQSection } from "@/components/landing/FAQSection";
 import { Footer } from "@/components/landing/Footer";
 
 const Index = () => {
@@ -24,6 +25,7 @@ const Index = () => {
         <AboutSection />
         <CTASection />
         <ContactSection />
+        <FAQSection />
       </main>
       <Footer />
     </div>

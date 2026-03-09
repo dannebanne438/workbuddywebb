@@ -96,10 +96,10 @@ export const ContactSection = () => {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Vill ni se hur WorkBuddy fungerar för er arbetsplats?
+              Boka en demo av WorkBuddy för ert företag
             </h2>
             <p className="text-lg text-muted-foreground">
-              Boka en kostnadsfri genomgång så visar vi hur det fungerar.
+              Se hur WorkBuddy förbättrar internkommunikation och personalhantering på er arbetsplats – helt kostnadsfritt.
             </p>
           </div>
 

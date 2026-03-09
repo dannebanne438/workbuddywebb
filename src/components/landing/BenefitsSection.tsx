@@ -39,10 +39,10 @@ export const BenefitsSection = () => {
             Mätbara fördelar
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Varför arbetsplatser väljer WorkBuddy
+            Förbättra kommunikationen med anställda – mätbart
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Mindre krångel, mer struktur – och nöjdare personal.
+            WorkBuddy minskar intern friktion, förbättrar informationsflödet och ger chefer mer tid – med ett system för personalhantering som faktiskt används.
           </p>
         </div>
 

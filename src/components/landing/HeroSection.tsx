@@ -23,15 +23,12 @@ export const HeroSection = () => {
           <div className="text-center lg:text-left space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight animate-fade-in">
-                WorkBuddy
+                WorkBuddy – plattform för internkommunikation och personalhantering
               </h1>
-              <p className="text-2xl sm:text-3xl lg:text-4xl font-medium text-foreground/80 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                Din digitala kollega för arbetsplatsen
-              </p>
             </div>
 
             <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 animate-fade-in text-balance" style={{ animationDelay: "0.2s" }}>
-              Samlar rutiner, schema, tider och svar – så personalen slipper fråga och chefer behåller kontrollen.
+              En digital arbetsplattform som samlar rutiner, schema, personalinformation och kommunikation – så att företag får full kontroll och anställda alltid har rätt svar.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in" style={{ animationDelay: "0.3s" }}>
