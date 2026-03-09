@@ -352,9 +352,9 @@ export const MobileScreen = ({ className = "" }: { className?: string }) => (
       {/* Status bar */}
       <div className="flex justify-between px-5 py-1 text-[8px] text-muted-foreground">
         <span>14:32</span>
-        <div className="flex gap-1 items-center">
+        <div className="flex gap-1.5 items-center">
           <span>5G</span>
-          <span>🔋</span>
+          <Battery className="w-3 h-3" />
         </div>
       </div>
       {/* App header */}
