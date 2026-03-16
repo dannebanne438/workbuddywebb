@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 const BrowserFrame = ({
   children,
   className = "",
-  url = "app.workbuddy.se"
+  url = "app.workbuddywebb.se"
 
 
 
