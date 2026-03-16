@@ -252,7 +252,7 @@ export const ScheduleScreen = ({ className = "" }: {className?: string;}) => {
   const colors = ["bg-primary/70", "bg-accent/70", "bg-primary/50", "bg-accent/50"];
 
   return (
-    <BrowserFrame className={className} url="app.workbuddy.se/schema">
+    <BrowserFrame className={className} url="app.workbuddywebb.se/schema">
       <div className="p-5 min-h-[340px]">
         <div className="flex items-center justify-between mb-4">
           <div>
