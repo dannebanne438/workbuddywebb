@@ -165,7 +165,7 @@ export const AIChatScreen = ({ className = "" }: {className?: string;}) => {
   }, [visibleMessages, messages.length]);
 
   return (
-    <BrowserFrame className={className} url="app.workbuddy.se/chat">
+    <BrowserFrame className={className} url="app.workbuddywebb.se/chat">
       <div className="flex min-h-[380px]">
         <div className="w-[180px] border-r border-border p-3 hidden sm:block bg-muted/10">
           <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">Konversationer</div>
