@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 const BrowserFrame = ({
   children,
   className = "",
-  url = "app.workbuddy.se"
+  url = "app.workbuddywebb.se"
 
 
 
@@ -165,7 +165,7 @@ export const AIChatScreen = ({ className = "" }: {className?: string;}) => {
   }, [visibleMessages, messages.length]);
 
   return (
-    <BrowserFrame className={className} url="app.workbuddy.se/chat">
+    <BrowserFrame className={className} url="app.workbuddywebb.se/chat">
       <div className="flex min-h-[380px]">
         <div className="w-[180px] border-r border-border p-3 hidden sm:block bg-muted/10">
           <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">Konversationer</div>
@@ -252,7 +252,7 @@ export const ScheduleScreen = ({ className = "" }: {className?: string;}) => {
   const colors = ["bg-primary/70", "bg-accent/70", "bg-primary/50", "bg-accent/50"];
 
   return (
-    <BrowserFrame className={className} url="app.workbuddy.se/schema">
+    <BrowserFrame className={className} url="app.workbuddywebb.se/schema">
       <div className="p-5 min-h-[340px]">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -295,7 +295,7 @@ export const ScheduleScreen = ({ className = "" }: {className?: string;}) => {
 
 // Incident screen
 export const IncidentScreen = ({ className = "" }: {className?: string;}) =>
-<BrowserFrame className={className} url="app.workbuddy.se/avvikelser">
+<BrowserFrame className={className} url="app.workbuddywebb.se/avvikelser">
     <div className="p-5 min-h-[340px]">
       <div className="flex items-center justify-between mb-4">
         <div>
